@@ -1,0 +1,85 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String   @id @default(cuid())
+  username        String   @unique
+  password        String
+  themePreference String   @default("dark") // "dark" or "light"
+  accentColor     String   @default("#3b82f6") // Default blue
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  bankAccounts BankAccount[]
+  expenses     Expense[]
+  creditCards  CreditCard[]
+  emis         EMI[]
+}
+
+model BankAccount {
+  id               String   @id @default(cuid())
+  userId           String
+  nickname         String
+  encryptedDetails String   // Encrypted string containing account number/bank details
+  balance          Float    @default(0.0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. "fixed", "variable", "loans", "credit cards", "emis", "Investments Fixed", "Investments Retirement"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  userId      String
+  categoryId  String
+  title       String
+  monthlyCost Float    @default(0.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model CreditCard {
+  id               String   @id @default(cuid())
+  userId           String
+  encryptedDetails String   // Encrypted card details / name
+  totalLimit       Float    @default(0.0)
+  availableBalance Float    @default(0.0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emis EMI[]
+}
+
+model EMI {
+  id           String   @id @default(cuid())
+  userId       String
+  creditCardId String
+  title        String
+  totalEmis    Int      @default(0)
+  paidEmis     Int      @default(0)
+  amount       Float    @default(0.0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+}
