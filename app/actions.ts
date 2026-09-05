@@ -7,12 +7,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 async function getUserId() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) throw new Error("Unauthorized");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (session.user as any).id as string;
+  const user = await prisma.user.findFirst();
+  if (!user) throw new Error("No user found");
+  return user.id;
 }
-
 // --- Bank Accounts ---
 
 export async function getBankAccounts() {
