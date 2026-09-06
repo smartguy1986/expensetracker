@@ -199,17 +199,18 @@ export async function getUserProfile() {
   const userId = await getUserId();
   return await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, themePreference: true, accentColor: true },
+    select: { id: true, username: true, themePreference: true, accentColor: true, currency: true },
   });
 }
 
-export async function updateUserProfile(data: { themePreference: string; accentColor: string }) {
+export async function updateUserProfile(data: { themePreference: string; accentColor: string; currency: string }) {
   const userId = await getUserId();
   await prisma.user.update({
     where: { id: userId },
     data: {
       themePreference: data.themePreference,
       accentColor: data.accentColor,
+      currency: data.currency,
     },
   });
   revalidatePath("/");

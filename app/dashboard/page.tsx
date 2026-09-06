@@ -26,52 +26,77 @@ export default async function Dashboard() {
 
   return (
     <div>
-      {/* Top Bar */}
-      <div className="flex justify-between align-center mb-4">
-        <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>⊞</div>
-        <div className="font-semibold" style={{ fontSize: '1.1rem' }}>Home</div>
-        <div style={{ fontSize: '1.5rem', opacity: 0.7 }}>🔔</div>
-      </div>
-
-      {/* Gradient Card */}
-      <div className="gradient-card">
-        <div style={{ opacity: 0.8, fontSize: '0.9rem', marginBottom: '8px' }}>Total Balance ⌄</div>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '24px', fontWeight: '700' }}>
-          ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </h1>
-        <div className="flex justify-between">
-          <div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '4px' }}>↓ Income</div>
-            <div className="font-semibold">${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+      {/* Massive Gradient Header */}
+      <div className="hero-header">
+        <div className="hero-header-content">
+          {/* Top Bar */}
+          <div className="flex justify-between align-center mb-4">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)' }} className="flex align-center justify-center">👤</div>
+              <div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Good Morning,</div>
+                <div className="font-semibold" style={{ fontSize: '1.1rem' }}>Priscilla</div>
+              </div>
+            </div>
+            <div style={{ fontSize: '1.5rem', padding: '8px', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>🔔</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '4px' }}>↑ Expenses</div>
-            <div className="font-semibold">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <div style={{ opacity: 0.85, fontSize: '0.9rem', marginBottom: '4px' }}>Current Balance</div>
+            <h1 style={{ fontSize: '2.6rem', marginBottom: '12px', fontWeight: '700', letterSpacing: '-0.5px' }}>
+              ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </h1>
+            <div style={{ fontSize: '0.8rem', opacity: 0.9, backgroundColor: 'rgba(255,255,255,0.15)', display: 'inline-block', padding: '6px 14px', borderRadius: '24px' }}>
+              + $784 than last week
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Transactions */}
-      <div className="flex justify-between align-center mb-3">
-        <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>Transactions</h2>
-        <Link href="/expenses" style={{ color: 'var(--accent-color)', fontSize: '0.9rem', textDecoration: 'none' }}>See All</Link>
-      </div>
-
-      <div>
-        {transactions.map(tx => (
-          <div key={tx.id} className="tx-item">
-            <div className="flex align-center">
-              <div className="tx-icon">{tx.icon}</div>
-              <div>
-                <div className="font-semibold" style={{ fontSize: '1rem', marginBottom: '4px' }}>{tx.title}</div>
-                <div className="text-muted" style={{ fontSize: '0.8rem' }}>{tx.time}</div>
-              </div>
-            </div>
-            <div className="font-bold" style={{ color: tx.amount > 0 ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
-              {tx.amount > 0 ? '+' : '-'}${Math.abs(tx.amount)}
+      {/* Overlapping Content Container */}
+      <div className="overlap-container">
+        {/* Income / Expense Cards */}
+        <div className="flex justify-between" style={{ gap: '16px', marginBottom: '32px' }}>
+          <div className="stat-card">
+            <div className="stat-icon" style={{ color: 'var(--primary-purple)', backgroundColor: '#f3e8ff' }}>💰</div>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Income ⓘ</div>
+              <div className="font-bold" style={{ fontSize: '1.1rem' }}>${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
             </div>
           </div>
-        ))}
+          <div className="stat-card">
+            <div className="stat-icon" style={{ color: 'var(--danger)', backgroundColor: '#fef2f2' }}>💳</div>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>Expenses ⓘ</div>
+              <div className="font-bold" style={{ fontSize: '1.1rem' }}>${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transactions */}
+        <div className="card" style={{ padding: '24px 20px' }}>
+          <div className="flex justify-between align-center mb-4">
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '700' }}>Transactions</h2>
+            <Link href="/expenses" style={{ color: 'var(--primary-purple)', fontSize: '0.9rem', textDecoration: 'none', fontWeight: '600', backgroundColor: '#f3e8ff', padding: '6px 12px', borderRadius: '12px' }}>See All</Link>
+          </div>
+
+          <div>
+            {transactions.map(tx => (
+              <div key={tx.id} className="tx-item" style={{ boxShadow: 'none', borderBottom: '1px solid var(--border-color)', borderRadius: '0', marginBottom: '0' }}>
+                <div className="flex align-center">
+                  <div className={`tx-icon ${tx.amount < 0 ? 'expense' : ''}`}>{tx.icon}</div>
+                  <div>
+                    <div className="font-semibold" style={{ fontSize: '1.05rem', marginBottom: '4px' }}>{tx.title}</div>
+                    <div className="text-muted" style={{ fontSize: '0.8rem' }}>{tx.time} • Card **4321</div>
+                  </div>
+                </div>
+                <div className="font-bold" style={{ color: tx.amount > 0 ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
+                  {tx.amount > 0 ? '+' : '-'}${Math.abs(tx.amount)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

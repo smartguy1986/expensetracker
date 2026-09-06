@@ -12,8 +12,9 @@ model User {
   id              String   @id @default(cuid())
   username        String   @unique
   password        String
-  themePreference String   @default("dark") // "dark" or "light"
-  accentColor     String   @default("#3b82f6") // Default blue
+  themePreference String   @default("light") // "dark" or "light"
+  accentColor     String   @default("#8b5cf6") // Default purple
+  currency        String   @default("USD")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

@@ -45,9 +45,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         {navItems.map((item, index) => {
           if (item.isFab) {
             return (
-              <Link key={index} href={item.path} className="nav-fab">
-                +
-              </Link>
+              <div key={index} className="nav-fab-wrapper">
+                <Link href={item.path} className="nav-fab">
+                  +
+                </Link>
+              </div>
             );
           }
           
