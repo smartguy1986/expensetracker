@@ -7,7 +7,7 @@ export default async function ExpensesPage() {
 
   return (
     <div>
-      <h1 className="mb-4">Expenses</h1>
+      <h1 className="page-title">Expenses</h1>
       <ClientExpenseList initialExpenses={expenses} categories={categories} />
     </div>
   );

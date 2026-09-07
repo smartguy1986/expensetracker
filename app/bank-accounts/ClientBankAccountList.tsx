@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { addBankAccount, deleteBankAccount } from "@/app/actions";
+import { useCurrency } from "@/app/components/CurrencyProvider";
 
 export default function ClientBankAccountList({ initialAccounts }: { initialAccounts: any[] }) {
+  const { currencySymbol } = useCurrency();
   const [nickname, setNickname] = useState("");
   const [details, setDetails] = useState("");
   const [balance, setBalance] = useState("");
@@ -39,7 +41,7 @@ export default function ClientBankAccountList({ initialAccounts }: { initialAcco
             <input type="text" className="form-input" value={details} onChange={(e) => setDetails(e.target.value)} required />
           </div>
           <div className="form-group">
-            <label className="form-label">Balance ($)</label>
+            <label className="form-label">Balance ({currencySymbol})</label>
             <input type="number" step="0.01" className="form-input" value={balance} onChange={(e) => setBalance(e.target.value)} required />
           </div>
           <button type="submit" className="btn" disabled={isSubmitting}>
@@ -50,16 +52,18 @@ export default function ClientBankAccountList({ initialAccounts }: { initialAcco
 
       <div>
         {initialAccounts.length === 0 ? (
-          <p className="text-muted">No accounts added yet.</p>
+          <p className="text-muted" style={{ padding: '0 24px' }}>No accounts added yet.</p>
         ) : (
           initialAccounts.map((acc) => (
             <div key={acc.id} className="card">
               <div className="flex justify-between align-center mb-2">
-                <h3>{acc.nickname}</h3>
-                <h3 className="text-success">${acc.balance.toLocaleString()}</h3>
+                <h3 style={{ fontSize: '1.15rem' }}>{acc.nickname}</h3>
+                <div className="flex align-center">
+                  <h3 className="text-success" style={{ marginRight: '16px', fontSize: '1.15rem' }}>{currencySymbol}{acc.balance.toLocaleString()}</h3>
+                  <button onClick={() => handleDelete(acc.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', opacity: 0.7 }} title="Delete">🗑️</button>
+                </div>
               </div>
-              <p className="text-muted mb-3" style={{ wordBreak: "break-all" }}>Details: {acc.details}</p>
-              <button className="btn btn-danger" onClick={() => handleDelete(acc.id)}>Delete</button>
+              <p className="text-muted mb-0" style={{ wordBreak: "break-all" }}>Details: {acc.details}</p>
             </div>
           ))
         )}

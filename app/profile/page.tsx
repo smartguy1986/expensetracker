@@ -8,7 +8,6 @@ export default async function ProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-4">User Profile</h1>
       <ClientProfile initialProfile={profile} />
     </div>
   );

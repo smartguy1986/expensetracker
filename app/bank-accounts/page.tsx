@@ -6,7 +6,7 @@ export default async function BankAccountsPage() {
 
   return (
     <div>
-      <h1 className="mb-4">Bank Accounts</h1>
+      <h1 className="page-title">Bank Accounts</h1>
       <ClientBankAccountList initialAccounts={bankAccounts} />
     </div>
   );

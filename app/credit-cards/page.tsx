@@ -7,7 +7,6 @@ export default async function CreditCardsPage() {
 
   return (
     <div>
-      <h1 className="mb-4">Credit Cards & EMIs</h1>
       <ClientCreditCardsList initialCards={creditCards} initialEmis={emis} />
     </div>
   );

@@ -1,156 +1,110 @@
 "use client";
 
 import { useState } from "react";
-import { addCreditCard, deleteCreditCard, addEmi, deleteEmi } from "@/app/actions";
+import { deleteEmi, deleteCreditCard } from "@/app/actions";
+import { useCurrency } from "@/app/components/CurrencyProvider";
+import Link from "next/link";
+import { ChevronLeft, Plus, CreditCard, Layers } from "lucide-react";
 
-export default function ClientCreditCardsList({ initialCards, initialEmis }: { initialCards: any[]; initialEmis: any[] }) {
-  const [details, setDetails] = useState("");
-  const [totalLimit, setTotalLimit] = useState("");
-  const [availableBalance, setAvailableBalance] = useState("");
-  
-  const [emiTitle, setEmiTitle] = useState("");
-  const [emiTotal, setEmiTotal] = useState("");
-  const [emiPaid, setEmiPaid] = useState("");
-  const [emiAmount, setEmiAmount] = useState("");
-  const [selectedCardId, setSelectedCardId] = useState(initialCards[0]?.id || "");
+export default function ClientCreditCardsList({ initialCards, initialEmis }: { initialCards: any[], initialEmis: any[] }) {
+  const { currencySymbol } = useCurrency();
 
-  const handleAddCard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await addCreditCard({ 
-      details, 
-      totalLimit: parseFloat(totalLimit) || 0, 
-      availableBalance: parseFloat(availableBalance) || 0 
-    });
-    setDetails("");
-    setTotalLimit("");
-    setAvailableBalance("");
-  };
-
-  const handleAddEmi = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await addEmi({
-      creditCardId: selectedCardId,
-      title: emiTitle,
-      totalEmis: parseInt(emiTotal) || 0,
-      paidEmis: parseInt(emiPaid) || 0,
-      amount: parseFloat(emiAmount) || 0,
-    });
-    setEmiTitle("");
-    setEmiTotal("");
-    setEmiPaid("");
-    setEmiAmount("");
-  };
-
-  const handleDeleteCard = async (id: string) => {
-    if (confirm("Are you sure?")) {
-      await deleteCreditCard(id);
-    }
-  };
-  
-  const handleDeleteEmi = async (id: string) => {
-    if (confirm("Are you sure?")) {
-      await deleteEmi(id);
-    }
-  };
+  const gradients = [
+    'linear-gradient(135deg, #10b981 0%, #fb7185 100%)', // Green to Pink
+    'linear-gradient(135deg, #3b82f6 0%, #f97316 100%)', // Blue to Orange
+    'linear-gradient(135deg, #34d399 0%, #3b82f6 100%)', // Emerald to Blue
+  ];
 
   return (
-    <div className="grid-2">
-      <div>
-        <div className="card">
-          <h2 className="mb-3">Add Credit Card</h2>
-          <form onSubmit={handleAddCard}>
-            <div className="form-group">
-              <label className="form-label">Card Details (Encrypted)</label>
-              <input type="text" className="form-input" value={details} onChange={(e) => setDetails(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Total Limit ($)</label>
-              <input type="number" step="0.01" className="form-input" value={totalLimit} onChange={(e) => setTotalLimit(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Available Balance ($)</label>
-              <input type="number" step="0.01" className="form-input" value={availableBalance} onChange={(e) => setAvailableBalance(e.target.value)} required />
-            </div>
-            <button type="submit" className="btn">Add Card</button>
-          </form>
+    <div style={{ paddingBottom: '120px' }}>
+      <div className="top-bar-centered animate-in" style={{ padding: '24px 24px 16px 24px' }}>
+        <div style={{ width: '40px', textAlign: 'left' }}>
+          <button onClick={() => window.history.back()} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
+            <ChevronLeft size={28} />
+          </button>
         </div>
-
-        <div className="card">
-          <h2 className="mb-3">Add EMI</h2>
-          <form onSubmit={handleAddEmi}>
-            <div className="form-group">
-              <label className="form-label">Credit Card</label>
-              <select className="form-input" value={selectedCardId} onChange={(e) => setSelectedCardId(e.target.value)} required>
-                {initialCards.map(c => <option key={c.id} value={c.id}>{c.details}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Title</label>
-              <input type="text" className="form-input" value={emiTitle} onChange={(e) => setEmiTitle(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Total EMIs</label>
-              <input type="number" className="form-input" value={emiTotal} onChange={(e) => setEmiTotal(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Paid EMIs</label>
-              <input type="number" className="form-input" value={emiPaid} onChange={(e) => setEmiPaid(e.target.value)} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Amount per EMI ($)</label>
-              <input type="number" step="0.01" className="form-input" value={emiAmount} onChange={(e) => setEmiAmount(e.target.value)} required />
-            </div>
-            <button type="submit" className="btn">Add EMI</button>
-          </form>
+        <div className="page-title">My Cards</div>
+        <div style={{ width: '40px', textAlign: 'right' }}>
+          <Link href="/credit-cards/add" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <button style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
+              <Plus size={28} />
+            </button>
+          </Link>
         </div>
       </div>
 
-      <div>
-        <h2 className="mb-3">Your Cards</h2>
+      <div className="animate-in delay-1" style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {initialCards.length === 0 ? (
-          <p className="text-muted">No cards added yet.</p>
+          <p className="text-muted" style={{ textAlign: 'center', marginTop: '40px' }}>No cards added yet.</p>
         ) : (
-          initialCards.map((card) => {
-            const cardEmis = initialEmis.filter(e => e.creditCardId === card.id);
-            const utilization = ((card.totalLimit - card.availableBalance) / card.totalLimit * 100).toFixed(1);
+          initialCards.map((card, index) => {
+            const gradient = gradients[index % gradients.length];
+            const parts = card.details.split(' - ');
+            const holder = parts[0] || "Card Holder";
+            const last4 = parts[1] || "****";
+            
             return (
-              <div key={card.id} className="card">
-                <div className="flex justify-between align-center mb-2">
-                  <h3 style={{ wordBreak: "break-all" }}>{card.details}</h3>
-                  <button className="btn btn-danger" onClick={() => handleDeleteCard(card.id)}>Delete</button>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span>Limit: ${card.totalLimit.toLocaleString()}</span>
-                  <span>Available: ${card.availableBalance.toLocaleString()}</span>
-                </div>
-                <div className="mb-3">
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}>
-                    <div style={{ width: `${utilization}%`, height: '100%', backgroundColor: 'var(--warning)', borderRadius: '4px' }}></div>
+              <Link key={card.id} href={`/credit-cards/${card.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  background: gradient,
+                  borderRadius: '24px',
+                  padding: '24px',
+                  color: '#fff',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }}></div>
+                  
+                  <div className="flex justify-between" style={{ position: 'relative' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', fontStyle: 'italic', letterSpacing: '-1px' }}>VISA</div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Current Balance</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{currencySymbol}{card.availableBalance.toLocaleString()}</div>
+                    </div>
                   </div>
-                  <small className="text-muted">{utilization}% Utilized</small>
-                </div>
-                
-                {cardEmis.length > 0 && (
-                  <div style={{ backgroundColor: 'var(--bg-color)', padding: '16px', borderRadius: '8px' }}>
-                    <h4 className="mb-2">Linked EMIs</h4>
-                    {cardEmis.map(emi => (
-                      <div key={emi.id} className="flex justify-between align-center mb-2" style={{ fontSize: '0.9rem' }}>
-                        <div>
-                          <strong>{emi.title}</strong>
-                          <div className="text-muted">{emi.paidEmis} / {emi.totalEmis} paid</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-danger">${emi.amount.toLocaleString()}/mo</div>
-                          <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: '0.8rem', marginTop: '4px' }} onClick={() => handleDeleteEmi(emi.id)}>Delete</button>
-                        </div>
-                      </div>
-                    ))}
+
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ fontSize: '1.2rem', letterSpacing: '3px', marginBottom: '8px' }}>
+                      **** **** **** {last4}
+                    </div>
+                    <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                      {holder}
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              </Link>
             );
           })
         )}
+      </div>
+
+      <div className="card animate-in delay-2" style={{ margin: '24px' }}>
+        <h2 className="mb-4" style={{ color: 'var(--text-primary)' }}>Active EMIs</h2>
+        {initialEmis.length === 0 && <p className="text-muted mb-4">No EMIs currently.</p>}
+        {initialEmis.map((emi) => (
+          <div key={emi.id} className="tx-item" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex align-center">
+              <div className="tx-icon" style={{ borderColor: 'var(--text-muted)', color: 'var(--text-primary)' }}><Layers size={20} /></div>
+              <div style={{ marginLeft: '16px' }}>
+                <div style={{ fontWeight: '600' }}>{emi.name}</div>
+                <div className="text-muted" style={{ fontSize: '0.85rem' }}>{currencySymbol}{emi.amount}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="animate-in delay-3" style={{ padding: '0 24px', marginTop: '32px' }}>
+        <Link href="/credit-cards/add-emi" style={{ display: 'block', textDecoration: 'none' }}>
+          <button className="btn" style={{ width: '100%', background: 'transparent', color: 'var(--static-highlight)', border: '1px solid var(--static-highlight)', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <Plus size={20} /> Add New EMI
+          </button>
+        </Link>
       </div>
     </div>
   );
