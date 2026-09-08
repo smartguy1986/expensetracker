@@ -3,9 +3,12 @@ import Link from "next/link";
 import { Bell, ArrowUpRight, ArrowDownRight, CreditCard, DollarSign } from "lucide-react";
 
 export default async function Dashboard() {
-  const expenses = await getExpenses();
-  const incomes = await getIncomes();
-  const bankAccounts = await getBankAccounts();
+  const [expenses, incomes, bankAccounts, profile] = await Promise.all([
+    getExpenses(),
+    getIncomes(),
+    getBankAccounts(),
+    getUserProfile()
+  ]);
 
   // Sort and merge recent transactions
   const allTransactions = [
@@ -14,8 +17,9 @@ export default async function Dashboard() {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
 
   const totalSpent = expenses.reduce((acc, exp) => acc + exp.monthlyCost, 0);
+  const totalBalance = bankAccounts.reduce((acc, account) => acc + account.balance, 0);
 
-  const profile = await getUserProfile();
+
   const currencyCode = profile?.currency || "USD";
   const currencySymbol = currencyCode === "EUR" ? "€" : currencyCode === "GBP" ? "£" : currencyCode === "INR" ? "₹" : currencyCode === "JPY" ? "¥" : "$";
 
@@ -35,43 +39,23 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      {/* Wallet Section (Side by side cards) */}
-      <div className="animate-in delay-1" style={{ padding: '0 24px', marginBottom: '32px' }}>
-        <h2 className="serif" style={{ fontSize: '1.3rem', marginBottom: '16px', color: 'var(--text-primary)' }}>Wallet</h2>
-        <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px' }}>
-          {bankAccounts.length === 0 ? (
-             <div className="card" style={{ flex: 1, margin: 0, padding: '20px', color: 'var(--text-muted)' }}>No accounts found.</div>
-          ) : (
-            bankAccounts.map((account, index) => (
-              <div key={account.id} className="card" style={{ flex: '0 0 calc(50% - 8px)', margin: 0, padding: '20px' }}>
-                <div className="flex justify-between align-center mb-4">
-                  <div style={{ fontWeight: '800', fontStyle: 'italic', letterSpacing: '-0.5px' }}>
-                    {index === 0 ? "MAIN" : "ALT"}
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{account.nickname}</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: '500' }}>{currencySymbol}{account.balance.toLocaleString()}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      {/* Dashboard Overview Cards */}
+      <div className="animate-in delay-1" style={{ padding: '0 24px', marginBottom: '40px' }}>
+        <h2 className="serif" style={{ fontSize: '1.3rem', marginBottom: '16px', color: 'var(--text-primary)' }}>Overview</h2>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          
+          {/* Main Balance Box */}
+          <div className="card" style={{ flex: 1, margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Main Balance</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: '600' }}>{currencySymbol}{totalBalance.toLocaleString()}</div>
+          </div>
+          
+          {/* Total Spent Box */}
+          <div className="card" style={{ flex: 1, margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Total Spent</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: '600' }}>{currencySymbol}{totalSpent.toLocaleString()}</div>
+          </div>
 
-      {/* Analytics (Sleek line chart mockup) */}
-      <div className="animate-in delay-2" style={{ padding: '0 24px', marginBottom: '40px' }}>
-        <div className="card" style={{ margin: 0, padding: '24px', display: 'flex', alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.5)', marginBottom: '4px' }}>Total spent this period</div>
-            <div className="flex align-center">
-              <div style={{ fontSize: '1.5rem', fontWeight: '500', marginRight: '8px' }}>{currencySymbol}{totalSpent.toLocaleString()}</div>
-            </div>
-          </div>
-          <div style={{ flex: 1, height: '40px', position: 'relative' }}>
-            {/* SVG line chart mockup using accent color */}
-            <svg viewBox="0 0 100 40" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-              <path d="M0 30 Q10 10, 20 25 T40 20 T60 30 T80 15 T100 5" fill="none" stroke="var(--static-highlight)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
         </div>
       </div>
 

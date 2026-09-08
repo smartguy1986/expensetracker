@@ -3,10 +3,12 @@ import ClientCategoryDetail from "./ClientCategoryDetail";
 import { notFound } from "next/navigation";
 
 export default async function CategoryDetailPage({ params }: { params: { id: string } }) {
-  const category = await getCategoryById(params.id);
-  if (!category) return notFound();
+  const [category, expenses] = await Promise.all([
+    getCategoryById(params.id),
+    getExpensesByCategory(params.id)
+  ]);
 
-  const expenses = await getExpensesByCategory(params.id);
+  if (!category) return notFound();
 
   return <ClientCategoryDetail category={category} initialExpenses={expenses} />;
 }

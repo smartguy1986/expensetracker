@@ -2,8 +2,10 @@ import { getCategories, getExpenses } from "@/app/actions";
 import ClientCategoryHub from "./ClientCategoryHub";
 
 export default async function CategoriesHubPage() {
-  const categories = await getCategories();
-  const expenses = await getExpenses();
+  const [categories, expenses] = await Promise.all([
+    getCategories(),
+    getExpenses()
+  ]);
 
   // Precompute totals so we can display how much has been spent per category
   const categoryTotals: Record<string, number> = {};

@@ -2,11 +2,13 @@ import ClientStatistics from "./ClientStatistics";
 import { getExpenses, getIncomes, getCategories, getUserProfile, getBankAccounts } from "@/app/actions";
 
 export default async function StatisticsPage() {
-  const expenses = await getExpenses();
-  const incomes = await getIncomes();
-  const categories = await getCategories();
-  const profile = await getUserProfile();
-  const bankAccounts = await getBankAccounts();
+  const [expenses, incomes, categories, profile, bankAccounts] = await Promise.all([
+    getExpenses(),
+    getIncomes(),
+    getCategories(),
+    getUserProfile(),
+    getBankAccounts()
+  ]);
   
   const totalBalance = bankAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
