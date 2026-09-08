@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useCurrency } from "@/app/components/CurrencyProvider";
-import { ChevronLeft, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, MoreHorizontal, Receipt, ShoppingBag, CreditCard, TrendingUp, Sparkles } from "lucide-react";
+import Link from "next/link";
 
-export default function ClientStatistics({ initialExpenses, categories, profile, totalBalance }: any) {
+export default function ClientStatistics({ initialExpenses, initialIncomes, categories, profile, totalBalance }: any) {
   const { currencySymbol } = useCurrency();
   const [filter, setFilter] = useState("Weekly");
   const [activeTab, setActiveTab] = useState("Spent");
@@ -15,8 +16,14 @@ export default function ClientStatistics({ initialExpenses, categories, profile,
     categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.monthlyCost;
   });
 
+  // Group incomes by title for visualization
+  const incomeTotals: Record<string, number> = {};
+  initialIncomes?.forEach((inc: any) => {
+    incomeTotals[inc.title] = (incomeTotals[inc.title] || 0) + inc.amount;
+  });
+
   // Sort categories by highest spend
-  const sortedCategories = categories
+  const sortedExpenseCategories = categories
     .map((cat: any) => ({
       ...cat,
       total: categoryTotals[cat.id] || 0
@@ -24,24 +31,31 @@ export default function ClientStatistics({ initialExpenses, categories, profile,
     .filter((cat: any) => cat.total > 0)
     .sort((a: any, b: any) => b.total - a.total);
 
+  const sortedIncomeSources = Object.keys(incomeTotals)
+    .map((title) => ({
+      id: title,
+      name: title,
+      total: incomeTotals[title]
+    }))
+    .sort((a: any, b: any) => b.total - a.total);
+
+  const currentList = activeTab === "Spent" ? sortedExpenseCategories : sortedIncomeSources;
+
   // Mock icons/colors for categories
   const getCategoryTheme = (name: string) => {
     const n = name.toLowerCase();
-    if (n.includes('bill') || n.includes('fixed')) return { icon: '🧾', bg: 'rgba(96, 165, 250, 0.2)', color: '#60a5fa' };
-    if (n.includes('shop') || n.includes('variable')) return { icon: '🛍️', bg: 'rgba(167, 139, 250, 0.2)', color: '#a78bfa' };
-    if (n.includes('tution') || n.includes('loan') || n.includes('emi')) return { icon: '📘', bg: 'rgba(251, 146, 60, 0.2)', color: '#fb923c' };
-    return { icon: '✨', bg: 'rgba(52, 211, 153, 0.2)', color: '#34d399' };
+    if (n.includes('bill') || n.includes('fixed')) return { icon: <Receipt size={20} />, bg: 'rgba(0, 0, 0, 0.05)', color: '#000000' };
+    if (n.includes('shop') || n.includes('variable')) return { icon: <ShoppingBag size={20} />, bg: 'rgba(0, 0, 0, 0.05)', color: '#000000' };
+    if (n.includes('loan') || n.includes('emi') || n.includes('credit')) return { icon: <CreditCard size={20} />, bg: 'rgba(0, 0, 0, 0.05)', color: '#000000' };
+    if (n.includes('invest')) return { icon: <TrendingUp size={20} />, bg: 'rgba(0, 0, 0, 0.05)', color: '#000000' };
+    return { icon: <Sparkles size={20} />, bg: 'rgba(0, 0, 0, 0.05)', color: '#000000' };
   };
 
   return (
     <div style={{ paddingBottom: '120px' }}>
       {/* Header */}
       <div className="top-bar-centered animate-in" style={{ padding: '24px 24px 16px 24px' }}>
-        <div style={{ width: '40px', textAlign: 'left' }}>
-          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
-            <ChevronLeft size={28} />
-          </button>
-        </div>
+        <div style={{ width: '40px', textAlign: 'left' }}></div>
         <div className="page-title">Statistics</div>
         <div style={{ width: '40px', textAlign: 'right', cursor: 'pointer', opacity: 0.8, color: 'var(--text-primary)' }}>
           <MoreHorizontal size={24} />
@@ -162,11 +176,11 @@ export default function ClientStatistics({ initialExpenses, categories, profile,
           
           {/* Tooltip Box */}
           <g transform="translate(50, 4)">
-            <rect x="-20" y="-8" width="40" height="12" rx="4" fill="#fbbf24" />
-            <text x="0" y="-0.5" fill="#000" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
+            <rect x="-20" y="-8" width="40" height="12" rx="4" fill="#000" />
+            <text x="0" y="-0.5" fill="#fff" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
               {currencySymbol}896.24
             </text>
-            <polygon points="-3,4 3,4 0,7" fill="#fbbf24" />
+            <polygon points="-3,4 3,4 0,7" fill="#000" />
           </g>
           
           {/* X Axis Labels */}
@@ -184,14 +198,13 @@ export default function ClientStatistics({ initialExpenses, categories, profile,
 
       {/* Category Cards */}
       <div style={{ padding: '0 24px' }}>
-        <h2 className="serif" style={{ fontSize: '1.6rem', marginBottom: '20px' }}>Total Spent</h2>
+        <h2 className="serif" style={{ fontSize: '1.6rem', marginBottom: '20px' }}>{activeTab === "Spent" ? "Total Spent" : "Total Income"}</h2>
         
         <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px', margin: '0 -24px', paddingLeft: '24px', paddingRight: '24px' }}>
-          {sortedCategories.map((cat: any) => {
-            const theme = getCategoryTheme(cat.name);
-            return (
+          {currentList.map((item: any) => {
+            const theme = getCategoryTheme(item.name);
+            const cardContent = (
               <div 
-                key={cat.id} 
                 style={{ 
                   background: theme.bg, 
                   minWidth: '120px', 
@@ -200,25 +213,41 @@ export default function ClientStatistics({ initialExpenses, categories, profile,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  border: `1px solid ${theme.color}40`, // 40 hex opacity
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                  border: `1px solid ${theme.color}40`,
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                  cursor: activeTab === 'Spent' ? 'pointer' : 'default',
+                  height: '100%'
                 }}
               >
-                <div style={{ fontSize: '2rem', marginBottom: '12px', background: theme.color, width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
+                <div style={{ marginBottom: '12px', color: theme.color, width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)' }}>
                   {theme.icon}
                 </div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '8px', textAlign: 'center', textTransform: 'capitalize' }}>
-                  {cat.name}
+                  {item.name}
                 </div>
                 <div style={{ color: theme.color, fontSize: '1.1rem', fontWeight: 'bold' }}>
-                  {currencySymbol}{cat.total.toLocaleString()}
+                  {currencySymbol}{item.total.toLocaleString()}
                 </div>
+              </div>
+            );
+
+            if (activeTab === "Spent") {
+              return (
+                <Link key={item.id} href={`/categories/${item.id}`} style={{ textDecoration: 'none' }}>
+                  {cardContent}
+                </Link>
+              );
+            }
+
+            return (
+              <div key={item.id}>
+                {cardContent}
               </div>
             );
           })}
           
-          {sortedCategories.length === 0 && (
-            <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No expenses found.</div>
+          {currentList.length === 0 && (
+            <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No data found.</div>
           )}
         </div>
       </div>

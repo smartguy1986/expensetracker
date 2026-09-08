@@ -9,9 +9,9 @@ export default function ClientCardDetails({ card, index }: { card: any, index: n
   const { currencySymbol } = useCurrency();
 
   const gradients = [
-    'linear-gradient(135deg, #555 0%, #222 100%)',
-    'linear-gradient(135deg, #444 0%, #111 100%)',
-    'linear-gradient(135deg, #666 0%, #333 100%)',
+    'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%)',
+    'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%)',
+    'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 100%)',
   ];
   const gradient = gradients[index % gradients.length];
 
@@ -46,8 +46,10 @@ export default function ClientCardDetails({ card, index }: { card: any, index: n
           background: gradient,
           borderRadius: '32px',
           padding: '32px',
-          color: '#fff',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+          color: 'var(--text-primary)',
+          boxShadow: 'var(--glass-shadow)',
+          border: '1px solid var(--glass-border)',
+          backdropFilter: 'blur(24px)'
         }}>
           <div className="flex justify-between align-center mb-2">
             <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Balance ⌄</div>
@@ -59,15 +61,15 @@ export default function ClientCardDetails({ card, index }: { card: any, index: n
 
           <div className="flex justify-between">
             <div>
-              <div className="flex align-center mb-1" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontSize: '0.7rem' }}>↓</span> 
+              <div className="flex align-center mb-1" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                <span style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid var(--glass-border)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontSize: '0.7rem' }}>↓</span> 
                 Income
               </div>
               <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>{currencySymbol}{income.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
             </div>
             <div>
-              <div className="flex align-center mb-1" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontSize: '0.7rem' }}>↑</span> 
+              <div className="flex align-center mb-1" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                <span style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid var(--glass-border)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', fontSize: '0.7rem' }}>↑</span> 
                 Expenses
               </div>
               <div style={{ fontSize: '1.2rem', fontWeight: '600' }}>{currencySymbol}{expenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>

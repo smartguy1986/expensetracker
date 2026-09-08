@@ -60,6 +60,18 @@ export async function getCategories() {
   return await prisma.category.findMany();
 }
 
+export async function getCategoryById(id: string) {
+  return await prisma.category.findUnique({ where: { id } });
+}
+
+export async function getExpensesByCategory(categoryId: string) {
+  const userId = await getUserId();
+  return await prisma.expense.findMany({
+    where: { userId, categoryId },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
 // --- Expenses ---
 
 export async function getExpenses() {
@@ -103,6 +115,49 @@ export async function deleteExpense(id: string) {
   await prisma.expense.delete({ where: { id, userId } });
   revalidatePath("/expenses");
   revalidatePath("/");
+}
+
+// --- Incomes ---
+
+export async function getIncomes() {
+  const userId = await getUserId();
+  return await prisma.income.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function addIncome(data: { title: string; amount: number }) {
+  const userId = await getUserId();
+  await prisma.income.create({
+    data: {
+      userId,
+      title: data.title,
+      amount: data.amount,
+    },
+  });
+  revalidatePath("/");
+  revalidatePath("/statistics");
+}
+
+export async function updateIncome(id: string, data: { title: string; amount: number }) {
+  const userId = await getUserId();
+  await prisma.income.update({
+    where: { id, userId },
+    data: {
+      title: data.title,
+      amount: data.amount,
+    },
+  });
+  revalidatePath("/");
+  revalidatePath("/statistics");
+}
+
+export async function deleteIncome(id: string) {
+  const userId = await getUserId();
+  await prisma.income.delete({ where: { id, userId } });
+  revalidatePath("/");
+  revalidatePath("/statistics");
 }
 
 // --- Credit Cards ---

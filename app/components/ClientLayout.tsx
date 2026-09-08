@@ -23,7 +23,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   const navItems = [
     { icon: <Home size={24} />, path: "/dashboard", label: "Home" },
-    { icon: <Wallet size={24} />, path: "/credit-cards", label: "Wallet" },
+    { icon: <Wallet size={24} />, path: "/categories", label: "Categories" },
     { icon: <Plus size={32} />, path: "/add", isFab: true },
     { icon: <BarChart2 size={24} />, path: "/statistics", label: "Statistics" },
     { icon: <Settings size={24} />, path: "/profile", label: "Settings" },

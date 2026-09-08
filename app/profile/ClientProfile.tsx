@@ -33,18 +33,14 @@ export default function ClientProfile({ initialProfile }: { initialProfile: any 
     <div>
       {/* Settings Header */}
       <div className="top-bar-centered animate-in" style={{ padding: '24px 24px 16px 24px' }}>
-        <div style={{ width: '40px', textAlign: 'left' }}>
-          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
-            <ChevronLeft size={28} />
-          </button>
-        </div>
+        <div style={{ width: '40px' }}></div>
         <div className="page-title">User Profile</div>
         <div style={{ width: '40px', textAlign: 'right', cursor: 'pointer', opacity: 0.8, color: 'var(--text-primary)' }}>
           <SettingsIcon size={24} />
         </div>
       </div>
 
-      <div className="overlap-container animate-in delay-1" style={{ paddingBottom: '40px' }}>
+      <div className="overlap-container animate-in delay-1" style={{ padding: '0 24px', paddingBottom: '40px' }}>
         
         {message && (
           <div style={{ backgroundColor: 'var(--accent-color)', color: '#000', padding: '12px 20px', borderRadius: '16px', marginBottom: '16px', textAlign: 'center', fontWeight: '600' }}>
@@ -78,7 +74,7 @@ export default function ClientProfile({ initialProfile }: { initialProfile: any 
         <div className="card animate-in delay-2">
           <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Data & Reports</h2>
           
-          <button onClick={handleGenerateReport} className="tx-item" style={{ width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
+          <button onClick={handleGenerateReport} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
             <div className="flex align-center">
               <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}><FileText size={20} /></div>
               <div>
@@ -93,7 +89,7 @@ export default function ClientProfile({ initialProfile }: { initialProfile: any 
         <div className="card animate-in delay-3">
           <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Account</h2>
           
-          <button onClick={() => alert("Terms & Conditions will open here.")} className="tx-item" style={{ width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '12px' }}>
+          <button onClick={() => alert("Terms & Conditions will open here.")} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '12px' }}>
             <div className="flex align-center">
               <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}><ScrollText size={20} /></div>
               <div>
@@ -102,7 +98,7 @@ export default function ClientProfile({ initialProfile }: { initialProfile: any 
             </div>
           </button>
           
-          <button onClick={() => signOut({ callbackUrl: '/' })} className="tx-item" style={{ width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
+          <button onClick={() => signOut({ callbackUrl: '/' })} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
             <div className="flex align-center">
               <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--danger)', borderColor: 'var(--danger)' }}><LogOut size={20} /></div>
               <div>

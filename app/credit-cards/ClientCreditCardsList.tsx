@@ -10,9 +10,9 @@ export default function ClientCreditCardsList({ initialCards, initialEmis }: { i
   const { currencySymbol } = useCurrency();
 
   const gradients = [
-    'linear-gradient(135deg, #10b981 0%, #fb7185 100%)', // Green to Pink
-    'linear-gradient(135deg, #3b82f6 0%, #f97316 100%)', // Blue to Orange
-    'linear-gradient(135deg, #34d399 0%, #3b82f6 100%)', // Emerald to Blue
+    'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%)',
+    'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%)',
+    'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 100%)',
   ];
 
   return (
@@ -49,8 +49,10 @@ export default function ClientCreditCardsList({ initialCards, initialEmis }: { i
                   background: gradient,
                   borderRadius: '24px',
                   padding: '24px',
-                  color: '#fff',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                  color: 'var(--text-primary)',
+                  boxShadow: 'var(--glass-shadow)',
+                  border: '1px solid var(--glass-border)',
+                  backdropFilter: 'blur(24px)',
                   position: 'relative',
                   overflow: 'hidden',
                   minHeight: '200px',
@@ -58,7 +60,7 @@ export default function ClientCreditCardsList({ initialCards, initialEmis }: { i
                   flexDirection: 'column',
                   justifyContent: 'space-between'
                 }}>
-                  <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }}></div>
+                  <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0,0,0,0.02)', pointerEvents: 'none' }}></div>
                   
                   <div className="flex justify-between" style={{ position: 'relative' }}>
                     <div style={{ fontSize: '1.8rem', fontWeight: '800', fontStyle: 'italic', letterSpacing: '-1px' }}>VISA</div>
@@ -83,25 +85,27 @@ export default function ClientCreditCardsList({ initialCards, initialEmis }: { i
         )}
       </div>
 
-      <div className="card animate-in delay-2" style={{ margin: '24px' }}>
-        <h2 className="mb-4" style={{ color: 'var(--text-primary)' }}>Active EMIs</h2>
-        {initialEmis.length === 0 && <p className="text-muted mb-4">No EMIs currently.</p>}
-        {initialEmis.map((emi) => (
-          <div key={emi.id} className="tx-item" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex align-center">
-              <div className="tx-icon" style={{ borderColor: 'var(--text-muted)', color: 'var(--text-primary)' }}><Layers size={20} /></div>
-              <div style={{ marginLeft: '16px' }}>
-                <div style={{ fontWeight: '600' }}>{emi.name}</div>
-                <div className="text-muted" style={{ fontSize: '0.85rem' }}>{currencySymbol}{emi.amount}</div>
+      <div className="animate-in delay-2" style={{ padding: '0 24px', marginTop: '24px' }}>
+        <div className="card">
+          <h2 className="mb-4" style={{ color: 'var(--text-primary)' }}>Active EMIs</h2>
+          {initialEmis.length === 0 && <p className="text-muted mb-4">No EMIs currently.</p>}
+          {initialEmis.map((emi) => (
+            <div key={emi.id} className="tx-item" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+              <div className="flex align-center">
+                <div className="tx-icon" style={{ borderColor: 'var(--text-muted)', color: 'var(--text-primary)' }}><Layers size={20} /></div>
+                <div style={{ marginLeft: '16px' }}>
+                  <div style={{ fontWeight: '600' }}>{emi.name}</div>
+                  <div className="text-muted" style={{ fontSize: '0.85rem' }}>{currencySymbol}{emi.amount}</div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      <div className="animate-in delay-3" style={{ padding: '0 24px', marginTop: '32px' }}>
+      <div className="animate-in delay-3" style={{ padding: '0 24px', marginTop: '16px' }}>
         <Link href="/credit-cards/add-emi" style={{ display: 'block', textDecoration: 'none' }}>
-          <button className="btn" style={{ width: '100%', background: 'transparent', color: 'var(--static-highlight)', border: '1px solid var(--static-highlight)', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+          <button className="btn" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}>
             <Plus size={20} /> Add New EMI
           </button>
         </Link>

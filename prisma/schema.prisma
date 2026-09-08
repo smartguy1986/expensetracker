@@ -1,7 +1,6 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -20,6 +19,7 @@ model User {
 
   bankAccounts BankAccount[]
   expenses     Expense[]
+  incomes      Income[]
   creditCards  CreditCard[]
   emis         EMI[]
 }
@@ -56,6 +56,17 @@ model Expense {
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  amount      Float    @default(0.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CreditCard {
