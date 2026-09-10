@@ -117,9 +117,9 @@ export default async function Dashboard() {
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <div style={{ fontSize: '2.2rem', fontWeight: '300', color: 'var(--text-muted)' }}>Hello,</div>
-            <div className="serif" style={{ fontSize: '2.2rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: '300', color: 'var(--text-muted)' }}>Hello,</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: '600', color: 'var(--text-primary)' }}>
               {profile?.username ? profile.username.split(' ')[0] : 'User'}
             </div>
           </div>
@@ -137,15 +137,15 @@ export default async function Dashboard() {
         <div style={{ display: 'flex', gap: '16px' }}>
           
           {/* Main Balance Box */}
-          <div className="card" style={{ flex: 1, margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="card" style={{ flex: 1, minWidth: 0, margin: 0, padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Main Balance</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: '600' }}>{currencySymbol}{totalBalance.toLocaleString()}</div>
+            <div style={{ fontSize: 'clamp(1.2rem, 5vw, 1.8rem)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currencySymbol}{totalBalance.toLocaleString()}</div>
           </div>
           
           {/* Total Spent Box */}
-          <div className="card" style={{ flex: 1, margin: 0, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="card" style={{ flex: 1, minWidth: 0, margin: 0, padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Total Spent</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: '600' }}>{currencySymbol}{totalSpent.toLocaleString()}</div>
+            <div style={{ fontSize: 'clamp(1.2rem, 5vw, 1.8rem)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currencySymbol}{totalSpent.toLocaleString()}</div>
           </div>
 
         </div>
