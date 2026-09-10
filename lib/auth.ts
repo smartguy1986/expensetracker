@@ -1,49 +1,54 @@
 import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcrypt";
+import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "./db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        username: { label: "Username", type: "text", placeholder: "admin" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          return null;
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.username,
-        };
-      },
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
   session: {
     strategy: "jwt",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        const email = user.email;
+        if (!email) return false;
+
+        let existingUser = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        // Always use the first name from Google
+        const firstName = user.name ? user.name.split(" ")[0] : email.split("@")[0];
+
+        if (!existingUser) {
+          existingUser = await prisma.user.create({
+            data: {
+              username: firstName,
+              email,
+              image: user.image,
+            },
+          });
+        } else if (existingUser.username !== firstName || existingUser.image !== user.image) {
+          // Update the username and image if they changed
+          existingUser = await prisma.user.update({
+            where: { email },
+            data: {
+              username: firstName,
+              image: user.image,
+            }
+          });
+        }
+        
+        user.id = existingUser.id;
+        user.name = existingUser.username;
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

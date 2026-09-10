@@ -1,7 +1,6 @@
 datasource db {
-  provider  = "postgresql"
+  provider  = "sqlite"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -11,7 +10,9 @@ generator client {
 model User {
   id              String   @id @default(cuid())
   username        String   @unique
-  password        String
+  email           String?  @unique
+  password        String?
+  image           String?
   themePreference String   @default("light") // "dark" or "light"
   accentColor     String   @default("#8b5cf6") // Default purple
   currency        String   @default("USD")
@@ -21,8 +22,11 @@ model User {
   bankAccounts BankAccount[]
   expenses     Expense[]
   incomes      Income[]
-  creditCards  CreditCard[]
-  emis         EMI[]
+  creditCardAccounts CreditCardAccount[]
+  fixedExpenses FixedExpense[]
+  variableExpenses VariableExpense[]
+  loans        Loan[]
+  retirementInvestments RetirementInvestment[]
 }
 
 model BankAccount {
@@ -70,30 +74,115 @@ model Income {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model CreditCard {
-  id               String   @id @default(cuid())
-  userId           String
-  encryptedDetails String   // Encrypted card details / name
-  totalLimit       Float    @default(0.0)
-  availableBalance Float    @default(0.0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+model CreditCardAccount {
+  id        String   @id @default(cuid())
+  userId    String
+  bankName  String   // e.g., HDFC
+  last4     String   // e.g., 1234
+  expiry    String   // e.g., 12/28
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emis EMI[]
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions CreditCardTransaction[]
 }
 
-model EMI {
+model CreditCardTransaction {
   id           String   @id @default(cuid())
-  userId       String
-  creditCardId String
+  accountId    String
+  isEmi        Boolean  @default(false)
   title        String
-  totalEmis    Int      @default(0)
-  paidEmis     Int      @default(0)
-  amount       Float    @default(0.0)
+  
+  // Base fields
+  amount       Float    // Regular expense amount OR Total Loan amount if EMI
+  date         DateTime // Date of expense OR Start date of EMI
+  
+  // EMI specific fields (nullable if isEmi is false)
+  interestRate Float?   
+  tenure       Int?     // Months
+  monthlyEmi   Float?
+  paidMonths   String   @default("[]") // JSON string array of paid month indices
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  account CreditCardAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model FixedExpense {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   // E.g., "Electric Bill"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries FixedExpenseEntry[]
+}
+
+model FixedExpenseEntry {
+  id             String   @id @default(cuid())
+  fixedExpenseId String
+  month          String   // Format: "YYYY-MM" (e.g. "2026-08")
+  amount         Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  fixedExpense FixedExpense @relation(fields: [fixedExpenseId], references: [id], onDelete: Cascade)
+}
+
+model VariableExpense {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   // E.g., "Groceries", "Dining Out"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries VariableExpenseEntry[]
+}
+
+model VariableExpenseEntry {
+  id                String   @id @default(cuid())
+  variableExpenseId String
+  month             String   // Format: "YYYY-MM" (e.g. "2026-08")
+  amount            Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  variableExpense VariableExpense @relation(fields: [variableExpenseId], references: [id], onDelete: Cascade)
+}
+
+model Loan {
+  id                String   @id @default(cuid())
+  userId            String
+  title             String
+  provider          String
+  totalAmount       Float
+  interestRate      Float
+  startDate         DateTime
+  totalTenureMonths Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RetirementInvestment {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  type              String   // PPF, NPS, Mutual Fund, LIC, etc.
+  startDate         DateTime
+  fundName          String?  // Optional, mostly for Mutual Funds
+  provider          String
+  paymentTerms      String   // Monthly, Quarterly, Half Yearly, Yearly
+  installmentAmount Float
+  currentValue      Float    @default(0.0)
+  totalWithdrawn    Float    @default(0.0)
+  paidTerms         String   @default("[]") // JSON string array of paid term indices
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

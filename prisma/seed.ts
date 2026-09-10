@@ -9,8 +9,7 @@ async function main() {
     'Variable',
     'Loans',
     'Credit Cards',
-    'EMIs',
-    'Investments Fixed',
+    'Investments',
     'Investments Retirement',
   ];
 

@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/app/components/CurrencyProvider";
-import { ChevronLeft, Maximize2, Wallet, Receipt, Upload, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { ChevronLeft, Maximize2, Wallet, Receipt, Upload, ArrowUpCircle, ArrowDownCircle, Edit2 } from "lucide-react";
+import { useState } from "react";
+import GlobalEditModal, { EntityType } from "../components/GlobalEditModal";
 
 export default function ClientAddPage({ recentTransactions }: { recentTransactions: any[] }) {
   const router = useRouter();
   const { currencySymbol } = useCurrency();
+  const [editModalData, setEditModalData] = useState<{ type: EntityType, data: any } | null>(null);
 
   return (
     <div style={{ padding: '24px', paddingBottom: '120px' }}>
@@ -60,23 +63,6 @@ export default function ClientAddPage({ recentTransactions }: { recentTransactio
         </button>
       </div>
 
-      {/* Quick Actions */}
-      <div className="animate-in delay-2">
-        <h2 className="serif mb-4" style={{ fontSize: '1.4rem' }}>Quick Actions</h2>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
-          <div className="card flex flex-col align-center" style={{ margin: 0, padding: '24px 16px', cursor: 'pointer' }}>
-            <div className="tx-icon" style={{ margin: '0 0 16px 0', borderColor: 'var(--text-muted)' }}><Upload size={24} color="var(--text-primary)" /></div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Import CSV</span>
-          </div>
-          
-          <div className="card flex flex-col align-center" style={{ margin: 0, padding: '24px 16px', cursor: 'pointer' }}>
-            <div className="tx-icon" style={{ margin: '0 0 16px 0', borderColor: 'var(--text-muted)' }}><Receipt size={24} color="var(--text-primary)" /></div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Scan Receipt</span>
-          </div>
-        </div>
-      </div>
-
       {/* Last Added */}
       <div className="animate-in delay-3">
         <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Last Added</h2>
@@ -108,13 +94,41 @@ export default function ClientAddPage({ recentTransactions }: { recentTransactio
                   </div>
                 </div>
               </div>
-              <div style={{ fontWeight: '600', color: tx.type === 'income' ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
-                {tx.type === 'income' ? '+' : ''}{tx.amount < 0 ? '-' : ''}{currencySymbol}{Math.abs(tx.amount).toLocaleString()}
+              <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => {
+                    let type: any = "EXPENSE";
+                    let realId = tx.id;
+                    if (tx.id.startsWith("inc-")) { type = "INCOME"; realId = tx.id.replace("inc-", ""); }
+                    else if (tx.id.startsWith("exp-")) { type = "EXPENSE"; realId = tx.id.replace("exp-", ""); }
+                    else if (tx.id.startsWith("fe-")) { type = "FIXED_ENTRY"; realId = tx.id.replace("fe-", ""); }
+                    else if (tx.id.startsWith("ve-")) { type = "VARIABLE_ENTRY"; realId = tx.id.replace("ve-", ""); }
+                    
+                    setEditModalData({
+                      type,
+                      data: { id: realId, title: tx.title, amount: tx.amount, date: tx.date }
+                    });
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                >
+                  <Edit2 size={16} />
+                </button>
+                <div style={{ fontWeight: '600', color: tx.type === 'income' ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
+                  {tx.type === 'income' ? '+' : ''}{tx.amount < 0 ? '-' : ''}{currencySymbol}{Math.abs(tx.amount).toLocaleString()}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {editModalData && (
+        <GlobalEditModal
+          entityType={editModalData.type}
+          entityData={editModalData.data}
+          onClose={() => setEditModalData(null)}
+        />
+      )}
     </div>
   );
 }

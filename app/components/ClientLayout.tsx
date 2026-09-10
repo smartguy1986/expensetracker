@@ -12,9 +12,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    getUserProfile().then((profile) => {
-      setProfileLoaded(true);
-    });
+    getUserProfile()
+      .then((profile) => {
+        setProfileLoaded(true);
+      })
+      .catch((error) => {
+        // User not logged in, ignore the error
+        console.log("No active session.");
+        setProfileLoaded(true);
+      });
   }, []);
 
   if (pathname === "/") {

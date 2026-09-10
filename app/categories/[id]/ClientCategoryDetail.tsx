@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { addExpense, deleteExpense } from "@/app/actions";
 import { useCurrency } from "@/app/components/CurrencyProvider";
-import { ChevronLeft, Trash2, Filter } from "lucide-react";
+import { ChevronLeft, Trash2, Filter, Edit2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import GlobalEditModal, { EntityType } from "../../components/GlobalEditModal";
 
 export default function ClientCategoryDetail({ category, initialExpenses }: { category: any, initialExpenses: any[] }) {
   const router = useRouter();
@@ -13,6 +14,9 @@ export default function ClientCategoryDetail({ category, initialExpenses }: { ca
   const [monthlyCost, setMonthlyCost] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Edit state
+  const [editModalData, setEditModalData] = useState<{ type: EntityType, data: any } | null>(null);
+
   // Filtering state
   const [filterType, setFilterType] = useState("All"); // All, Month, Year
   const [filterValue, setFilterValue] = useState(""); // e.g. "2026-04" for Month, "2026" for Year
@@ -141,6 +145,12 @@ export default function ClientCategoryDetail({ category, initialExpenses }: { ca
                   -{currencySymbol}{expense.monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <button 
+                  onClick={() => setEditModalData({ type: "EXPENSE", data: expense })}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                >
+                  <Edit2 size={18} />
+                </button>
+                <button 
                   onClick={() => handleDelete(expense.id)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                 >
@@ -154,6 +164,14 @@ export default function ClientCategoryDetail({ category, initialExpenses }: { ca
           )}
         </div>
       </div>
+
+      {editModalData && (
+        <GlobalEditModal
+          entityType={editModalData.type}
+          entityData={editModalData.data}
+          onClose={() => setEditModalData(null)}
+        />
+      )}
     </div>
   );
 }

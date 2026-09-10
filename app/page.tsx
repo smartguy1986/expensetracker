@@ -1,13 +1,17 @@
-import Link from "next/link";
+"use client";
+
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
+  const router = useRouter();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--primary-gradient)', position: 'relative' }}>
       
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Placeholder for 3D Wallet illustration */}
-        <div style={{ width: '200px', height: '200px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-          👛
+        <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src="/images/expenselogo.png" alt="Expense Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
       </div>
 
@@ -18,9 +22,11 @@ export default function LandingPage() {
         <p style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.5 }}>
           Save money! The more your money<br/>works for you, the less you have to<br/>work for money.
         </p>
-        <Link href="/dashboard" className="btn" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '1.2rem' }}>
-          Let's Start
-        </Link>
+        
+        <button onClick={() => signIn('google', { callbackUrl: '/dashboard' })} className="btn" style={{ width: '100%', padding: '20px', borderRadius: '20px', fontSize: '1.2rem', marginBottom: '16px', backgroundColor: '#fff', color: '#000', border: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+          <img src="https://authjs.dev/img/providers/google.svg" alt="Google Logo" style={{ width: '24px', height: '24px' }} />
+          Continue with Google
+        </button>
       </div>
 
     </div>

@@ -5,31 +5,186 @@ import { useCurrency } from "@/app/components/CurrencyProvider";
 import { ChevronLeft, MoreHorizontal, Receipt, ShoppingBag, CreditCard, TrendingUp, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-export default function ClientStatistics({ initialExpenses, initialIncomes, categories, profile, totalBalance }: any) {
+export default function ClientStatistics({ initialExpenses, initialIncomes, fixedExpenses, variableExpenses, creditCards, categories, profile, totalBalance }: any) {
   const { currencySymbol } = useCurrency();
   const [filter, setFilter] = useState("Weekly");
   const [activeTab, setActiveTab] = useState("Spent");
 
+  const now = new Date();
+  let startDate = new Date();
+  let endDate = new Date();
+  let dateRangeText = "";
+
+  if (filter === "Weekly") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    dateRangeText = `${startDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}`;
+  } else if (filter === "Monthly") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    dateRangeText = startDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  } else if (filter === "Yearly") {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+    dateRangeText = startDate.getFullYear().toString();
+  }
+
+  const filteredExpenses = initialExpenses?.filter((exp: any) => {
+    const d = new Date(exp.createdAt).getTime();
+    return d >= startDate.getTime() && d <= endDate.getTime();
+  }) || [];
+
+  const filteredIncomes = initialIncomes?.filter((inc: any) => {
+    const d = new Date(inc.createdAt).getTime();
+    return d >= startDate.getTime() && d <= endDate.getTime();
+  }) || [];
+
+  const flatFixedExpenses: any[] = [];
+  if (fixedExpenses) {
+    fixedExpenses.forEach((fe: any) => {
+      fe.entries?.forEach((entry: any) => {
+        const [year, month] = entry.month.split('-');
+        const entryDate = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
+        if (entryDate >= startDate.getTime() && entryDate <= endDate.getTime()) {
+           const fixedCat = categories?.find((c: any) => c.name.toLowerCase() === 'fixed');
+           if (fixedCat) {
+             flatFixedExpenses.push({
+               categoryId: fixedCat.id,
+               monthlyCost: entry.amount,
+               date: new Date(entryDate)
+             });
+           }
+        }
+      });
+    });
+  }
+
+  const flatVariableExpenses: any[] = [];
+  if (variableExpenses) {
+    variableExpenses.forEach((ve: any) => {
+      ve.entries?.forEach((entry: any) => {
+        const [year, month] = entry.month.split('-');
+        const entryDate = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
+        if (entryDate >= startDate.getTime() && entryDate <= endDate.getTime()) {
+           const variableCat = categories?.find((c: any) => c.name.toLowerCase() === 'variable');
+           if (variableCat) {
+             flatVariableExpenses.push({
+               categoryId: variableCat.id,
+               monthlyCost: entry.amount,
+               date: new Date(entryDate)
+             });
+           }
+        }
+      });
+    });
+  }
+
+  const flatCreditCardExpenses: any[] = [];
+  if (creditCards) {
+    const ccCat = categories?.find((c: any) => c.name.toLowerCase() === 'credit cards');
+    creditCards.forEach((card: any) => {
+      card.transactions?.forEach((tx: any) => {
+        if (tx.isEmi) {
+          let paidMonths: number[] = [];
+          try { paidMonths = JSON.parse(tx.paidMonths); } catch(e) {}
+          const txDate = new Date(tx.date);
+          
+          paidMonths.forEach((mIndex: number) => {
+             const emiDate = new Date(txDate.getFullYear(), txDate.getMonth() + mIndex, 1);
+             if (emiDate.getTime() >= startDate.getTime() && emiDate.getTime() <= endDate.getTime() && ccCat) {
+               flatCreditCardExpenses.push({
+                 categoryId: ccCat.id,
+                 monthlyCost: tx.monthlyEmi,
+                 date: emiDate
+               });
+             }
+          });
+        } else {
+          const tDate = new Date(tx.date);
+          if (tDate.getTime() >= startDate.getTime() && tDate.getTime() <= endDate.getTime() && ccCat) {
+             flatCreditCardExpenses.push({
+               categoryId: ccCat.id,
+               monthlyCost: tx.amount,
+               date: tDate
+             });
+          }
+        }
+      });
+    });
+  }
+
+  const allFilteredExpenses = [...filteredExpenses, ...flatFixedExpenses, ...flatVariableExpenses, ...flatCreditCardExpenses];
+
+  // Chart Data Grouping
+  const getChartData = () => {
+    const sourceData = activeTab === "Spent" ? allFilteredExpenses : filteredIncomes;
+    const valueKey = activeTab === "Spent" ? 'monthlyCost' : 'amount';
+    
+    // First, standardize dates
+    const normalizedData = sourceData.map((item: any) => ({
+      value: item[valueKey],
+      date: new Date(item.createdAt || item.date)
+    }));
+
+    const dataPoints: { label: string, value: number }[] = [];
+
+    if (filter === "Weekly") {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        dataPoints.push({ label: days[d.getDay()], value: 0 });
+      }
+      normalizedData.forEach((item: any) => {
+        const itemDay = days[item.date.getDay()];
+        const point = dataPoints.find(p => p.label === itemDay);
+        if (point) point.value += item.value;
+      });
+    } else if (filter === "Monthly") {
+      // Group by weeks
+      dataPoints.push({ label: 'Week 1', value: 0 }, { label: 'Week 2', value: 0 }, { label: 'Week 3', value: 0 }, { label: 'Week 4', value: 0 });
+      normalizedData.forEach((item: any) => {
+        const date = item.date.getDate();
+        if (date <= 7) dataPoints[0].value += item.value;
+        else if (date <= 14) dataPoints[1].value += item.value;
+        else if (date <= 21) dataPoints[2].value += item.value;
+        else dataPoints[3].value += item.value;
+      });
+    } else if (filter === "Yearly") {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      months.forEach(m => dataPoints.push({ label: m, value: 0 }));
+      normalizedData.forEach((item: any) => {
+        const m = months[item.date.getMonth()];
+        const point = dataPoints.find(p => p.label === m);
+        if (point) point.value += item.value;
+      });
+    }
+
+    return dataPoints;
+  };
+
+  const chartData = getChartData();
+  const maxChartValue = Math.max(...chartData.map(d => d.value), 1);
+
   // Group expenses by category
   const categoryTotals: Record<string, number> = {};
-  initialExpenses.forEach((exp: any) => {
+  allFilteredExpenses.forEach((exp: any) => {
     categoryTotals[exp.categoryId] = (categoryTotals[exp.categoryId] || 0) + exp.monthlyCost;
   });
 
   // Group incomes by title for visualization
   const incomeTotals: Record<string, number> = {};
-  initialIncomes?.forEach((inc: any) => {
+  filteredIncomes.forEach((inc: any) => {
     incomeTotals[inc.title] = (incomeTotals[inc.title] || 0) + inc.amount;
   });
 
   // Sort categories by highest spend
   const sortedExpenseCategories = categories
-    .map((cat: any) => ({
+    ?.map((cat: any) => ({
       ...cat,
       total: categoryTotals[cat.id] || 0
     }))
     .filter((cat: any) => cat.total > 0)
-    .sort((a: any, b: any) => b.total - a.total);
+    .sort((a: any, b: any) => b.total - a.total) || [];
 
   const sortedIncomeSources = Object.keys(incomeTotals)
     .map((title) => ({
@@ -40,6 +195,10 @@ export default function ClientStatistics({ initialExpenses, initialIncomes, cate
     .sort((a: any, b: any) => b.total - a.total);
 
   const currentList = activeTab === "Spent" ? sortedExpenseCategories : sortedIncomeSources;
+
+  const totalFilteredSpent = allFilteredExpenses.reduce((sum: number, exp: any) => sum + exp.monthlyCost, 0);
+  const totalFilteredIncome = filteredIncomes.reduce((sum: number, inc: any) => sum + inc.amount, 0);
+  const displayBalance = totalFilteredIncome - totalFilteredSpent;
 
   // Mock icons/colors for categories
   const getCategoryTheme = (name: string) => {
@@ -66,9 +225,9 @@ export default function ClientStatistics({ initialExpenses, initialIncomes, cate
       <div className="flex justify-between align-center animate-in delay-1" style={{ padding: '0 24px', marginBottom: '32px' }}>
         <div>
           <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '4px', letterSpacing: '-0.5px' }}>
-            {currencySymbol}{totalBalance > 0 ? totalBalance.toLocaleString() : '5,044.00'}
+            {currencySymbol}{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Current Balance</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Net Balance</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <select 
@@ -89,7 +248,7 @@ export default function ClientStatistics({ initialExpenses, initialIncomes, cate
             <option>Monthly</option>
             <option>Yearly</option>
           </select>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Jun 06 - 12</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{dateRangeText}</div>
         </div>
       </div>
 
@@ -142,57 +301,60 @@ export default function ClientStatistics({ initialExpenses, initialIncomes, cate
       {/* Chart Area */}
       <div style={{ position: 'relative', height: '240px', marginBottom: '32px', padding: '0 12px' }}>
         <svg viewBox="0 0 100 60" preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-          <defs>
-            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--static-highlight)" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="var(--static-highlight)" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
           
-          {/* Vertical Grid Lines */}
-          {[10, 25, 40, 55, 70, 85].map(x => (
-            <line key={x} x1={x} y1="0" x2={x} y2="50" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-          ))}
-          
-          {/* Chart fill */}
+          {/* Combination Line Path */}
           <path 
-            d="M 0 35 C 10 25, 20 40, 35 25 C 45 15, 55 10, 65 20 C 75 30, 85 30, 100 15 L 100 50 L 0 50 Z" 
-            fill="url(#chartGradient)" 
-          />
-          
-          {/* Chart line */}
-          <path 
-            d="M 0 35 C 10 25, 20 40, 35 25 C 45 15, 55 10, 65 20 C 75 30, 85 30, 100 15" 
+            d={chartData.map((point, index) => {
+              const xSpacing = 100 / (chartData.length + 1);
+              const xPos = xSpacing * (index + 1);
+              const barHeight = (point.value / maxChartValue) * 40;
+              const yPos = 50 - barHeight;
+              return `${index === 0 ? 'M' : 'L'} ${xPos} ${yPos}`;
+            }).join(' ')}
             fill="none" 
-            stroke="var(--static-highlight)" 
-            strokeWidth="1.5" 
+            stroke="var(--text-primary)" 
+            strokeWidth="0.8" 
             strokeLinecap="round" 
             strokeLinejoin="round" 
+            opacity="0.3"
           />
-          
-          {/* Tooltip Point */}
-          <circle cx="50" cy="12.5" r="2" fill="var(--static-highlight)" />
-          <circle cx="50" cy="12.5" r="4" fill="none" stroke="var(--static-highlight)" strokeWidth="1" />
-          
-          {/* Tooltip Box */}
-          <g transform="translate(50, 4)">
-            <rect x="-20" y="-8" width="40" height="12" rx="4" fill="#000" />
-            <text x="0" y="-0.5" fill="#fff" fontSize="5" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
-              {currencySymbol}896.24
-            </text>
-            <polygon points="-3,4 3,4 0,7" fill="#000" />
-          </g>
-          
-          {/* X Axis Labels */}
-          <g fill="var(--text-muted)" fontSize="4" textAnchor="middle">
-            <text x="10" y="55">Mon</text>
-            <text x="25" y="55">Tue</text>
-            <text x="40" y="55">Wed</text>
-            <text x="55" y="55">Thu</text>
-            <text x="70" y="55">Fri</text>
-            <text x="85" y="55">Sat</text>
-            <text x="100" y="55">Sun</text>
-          </g>
+
+          {chartData.map((point, index) => {
+            const xSpacing = 100 / (chartData.length + 1);
+            const xPos = xSpacing * (index + 1);
+            const barHeight = (point.value / maxChartValue) * 40; // Max height 40
+            const yPos = 50 - barHeight;
+
+            return (
+              <g key={index}>
+                <line x1={xPos} y1="10" x2={xPos} y2="50" stroke="rgba(0,0,0,0.05)" strokeWidth="0.5" />
+                
+                {barHeight > 0 && (
+                  <rect 
+                    x={xPos - (filter === 'Yearly' ? 2 : 3)} 
+                    y={yPos} 
+                    width={filter === 'Yearly' ? 4 : 6} 
+                    height={barHeight} 
+                    fill="var(--static-highlight)" 
+                    rx="1"
+                  />
+                )}
+
+                {/* Point on the line */}
+                {barHeight > 0 && (
+                  <circle cx={xPos} cy={yPos} r="1" fill="var(--text-primary)" opacity="0.6" />
+                )}
+                
+                <text x={xPos} y="55" fill="var(--text-muted)" fontSize={filter === 'Yearly' ? "3" : "3.5"} textAnchor="middle">{point.label}</text>
+
+                {point.value > 0 && (
+                  <text x={xPos} y={yPos - 3} fill="var(--text-primary)" fontSize={filter === 'Yearly' ? "2" : "2.5"} textAnchor="middle" fontWeight="600">
+                    {point.value > 1000 ? (point.value/1000).toFixed(1)+'k' : point.value}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </svg>
       </div>
 

@@ -33,11 +33,16 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrencyState] = useState("USD");
 
   useEffect(() => {
-    getUserProfile().then((profile) => {
-      if (profile && profile.currency) {
-        setCurrencyState(profile.currency);
-      }
-    });
+    getUserProfile()
+      .then((profile) => {
+        if (profile && profile.currency) {
+          setCurrencyState(profile.currency);
+        }
+      })
+      .catch((error) => {
+        // User not logged in, ignore the error
+        console.log("No active session for currency.");
+      });
   }, []);
 
   const setCurrency = (newCurrency: string) => {

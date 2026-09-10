@@ -1,5 +1,10 @@
-import { getCategoryById, getExpensesByCategory } from "@/app/actions";
+import { getCategoryById, getExpensesByCategory, getFixedExpenses, getVariableExpenses, getLoans, getCreditCards, getRetirementInvestments } from "@/app/actions";
 import ClientCategoryDetail from "./ClientCategoryDetail";
+import ClientFixedCategoryDetail from "./ClientFixedCategoryDetail";
+import ClientVariableCategoryDetail from "./ClientVariableCategoryDetail";
+import ClientLoanCategoryDetail from "./ClientLoanCategoryDetail";
+import ClientCreditCardCategoryDetail from "./ClientCreditCardCategoryDetail";
+import ClientRetirementCategoryDetail from "./ClientRetirementCategoryDetail";
 import { notFound } from "next/navigation";
 
 export default async function CategoryDetailPage({ params }: { params: { id: string } }) {
@@ -9,6 +14,31 @@ export default async function CategoryDetailPage({ params }: { params: { id: str
   ]);
 
   if (!category) return notFound();
+
+  if (category.name.toLowerCase() === "fixed") {
+    const fixedExpenses = await getFixedExpenses();
+    return <ClientFixedCategoryDetail fixedExpenses={fixedExpenses} />;
+  }
+
+  if (category.name.toLowerCase() === "variable") {
+    const variableExpenses = await getVariableExpenses();
+    return <ClientVariableCategoryDetail variableExpenses={variableExpenses} />;
+  }
+
+  if (category.name.toLowerCase() === "loans") {
+    const loans = await getLoans();
+    return <ClientLoanCategoryDetail loans={loans} />;
+  }
+
+  if (category.name.toLowerCase() === "credit cards") {
+    const creditCards = await getCreditCards();
+    return <ClientCreditCardCategoryDetail creditCards={creditCards} />;
+  }
+
+  if (category.name.toLowerCase() === "investments retirement") {
+    const investments = await getRetirementInvestments();
+    return <ClientRetirementCategoryDetail investments={investments} />;
+  }
 
   return <ClientCategoryDetail category={category} initialExpenses={expenses} />;
 }
