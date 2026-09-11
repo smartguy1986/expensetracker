@@ -31,15 +31,17 @@ export const authOptions: NextAuthOptions = {
               username: firstName,
               email,
               image: user.image,
+              lastLoginAt: new Date(),
             },
           });
-        } else if (existingUser.username !== firstName || existingUser.image !== user.image) {
-          // Update the username and image if they changed
+        } else {
+          // Update the username and image if they changed, and update lastLoginAt
           existingUser = await prisma.user.update({
             where: { email },
             data: {
               username: firstName,
               image: user.image,
+              lastLoginAt: new Date(),
             }
           });
         }

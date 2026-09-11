@@ -1,15 +1,16 @@
-import { getCategories, getExpenses, getFixedExpenses, getVariableExpenses, getLoans, getCreditCards, getRetirementInvestments } from "@/app/actions";
+import { getCategories, getExpenses, getFixedExpenses, getVariableExpenses, getLoans, getCreditCards, getRetirementInvestments, getInvestments } from "@/app/actions";
 import ClientCategoryHub from "./ClientCategoryHub";
 
 export default async function CategoriesHubPage() {
-  const [categories, expenses, fixedExpenses, variableExpenses, loans, creditCards, retirementInvestments] = await Promise.all([
+  const [categories, expenses, fixedExpenses, variableExpenses, loans, creditCards, retirementInvestments, investments] = await Promise.all([
     getCategories(),
     getExpenses(),
     getFixedExpenses(),
     getVariableExpenses(),
     getLoans(),
     getCreditCards(),
-    getRetirementInvestments()
+    getRetirementInvestments(),
+    getInvestments()
   ]);
 
   const now = new Date();
@@ -76,8 +77,22 @@ export default async function CategoriesHubPage() {
       totalSpent += ccTotal;
     }
 
-    if (cat.name.toLowerCase().includes("retirement")) {
+    if (cat.name.toLowerCase() === "investments retirement") {
       totalSpent += retirementInvestments.reduce((acc: number, inv: any) => acc + (inv.currentValue || 0), 0);
+    }
+
+    if (cat.name.toLowerCase() === "investments") {
+      let invTotal = 0;
+      investments.forEach((inv: any) => {
+        inv.transactions.forEach((tx: any) => {
+          const t = new Date(tx.date).getTime();
+          if (t >= startOfMonth && t <= endOfMonth) {
+            if (tx.type === "DEPOSIT") invTotal += tx.amount;
+            else if (tx.type === "WITHDRAWAL") invTotal -= tx.amount;
+          }
+        });
+      });
+      totalSpent += invTotal;
     }
 
     return { ...cat, totalSpent };

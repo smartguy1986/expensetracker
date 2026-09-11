@@ -17,25 +17,37 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
   const [interestRate, setInterestRate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [totalTenureMonths, setTotalTenureMonths] = useState("");
+  const [interestOnlyMonths, setInterestOnlyMonths] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit state
   const [editModalData, setEditModalData] = useState<{ type: EntityType, data: any } | null>(null);
 
-  // Auto-calculation logic (Standard EMI)
+  // Auto-calculation logic (Standard and Flexi EMI)
   let calculatedTotal = 0;
   let calculatedMonthly = 0;
+  let calculatedInterestOnlyMonthly = 0;
+  let isFlexi = false;
   
   const p = parseFloat(totalAmount) || 0;
   const rAnnual = parseFloat(interestRate) || 0;
   const n = parseInt(totalTenureMonths) || 0;
+  const flexiMonths = parseInt(interestOnlyMonths) || 0;
 
   if (p > 0 && n > 0) {
     if (rAnnual > 0) {
       const r = rAnnual / 12 / 100;
-      const emi = p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-      calculatedMonthly = emi;
-      calculatedTotal = emi * n;
+      if (flexiMonths > 0 && flexiMonths < n) {
+        isFlexi = true;
+        calculatedInterestOnlyMonthly = p * r;
+        const remainingN = n - flexiMonths;
+        calculatedMonthly = (p * r * Math.pow(1 + r, remainingN)) / (Math.pow(1 + r, remainingN) - 1);
+        calculatedTotal = (calculatedInterestOnlyMonthly * flexiMonths) + (calculatedMonthly * remainingN);
+      } else {
+        const emi = p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        calculatedMonthly = emi;
+        calculatedTotal = emi * n;
+      }
     } else {
       calculatedTotal = p;
       calculatedMonthly = p / n;
@@ -53,7 +65,8 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
       parseFloat(totalAmount),
       parseFloat(interestRate),
       startDate,
-      parseInt(totalTenureMonths)
+      parseInt(totalTenureMonths),
+      parseInt(interestOnlyMonths) || 0
     );
     
     setTitle("");
@@ -62,6 +75,7 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
     setInterestRate("");
     setStartDate("");
     setTotalTenureMonths("");
+    setInterestOnlyMonths("");
     setIsSubmitting(false);
   };
 
@@ -143,15 +157,25 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
                 onChange={(e) => setStartDate(e.target.value)} 
                 required 
               />
-              <input 
-                type="number" 
-                className="form-input" 
-                style={{ marginBottom: 0 }}
-                value={totalTenureMonths} 
-                onChange={(e) => setTotalTenureMonths(e.target.value)} 
-                required 
-                placeholder="Tenure (Months)" 
-              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  style={{ marginBottom: 0 }}
+                  value={totalTenureMonths} 
+                  onChange={(e) => setTotalTenureMonths(e.target.value)} 
+                  required 
+                  placeholder="Tenure (Mo)" 
+                />
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  style={{ marginBottom: 0 }}
+                  value={interestOnlyMonths} 
+                  onChange={(e) => setInterestOnlyMonths(e.target.value)} 
+                  placeholder="Flexi (Mo)" 
+                />
+              </div>
             </div>
 
             {/* Auto Calculation Display */}
@@ -162,10 +186,23 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
               marginTop: '8px',
               border: '1px solid var(--glass-border)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                <span>Estimated Monthly EMI:</span>
-                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{calculatedMonthly.toFixed(2)}</span>
-              </div>
+              {isFlexi ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    <span>Interest-Only EMI ({flexiMonths} mo):</span>
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{calculatedInterestOnlyMonthly.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    <span>Regular EMI ({n - flexiMonths} mo):</span>
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{calculatedMonthly.toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  <span>Estimated Monthly EMI:</span>
+                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{calculatedMonthly.toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                 <span>Total Payable (with Interest):</span>
                 <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{calculatedTotal.toFixed(2)}</span>
@@ -188,8 +225,26 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
               {loans.map((loan: any) => {
                 // Calculate total dynamically
                 const r = loan.interestRate / 12 / 100;
-                const emi = r > 0 ? (loan.totalAmount * r * Math.pow(1 + r, loan.totalTenureMonths) / (Math.pow(1 + r, loan.totalTenureMonths) - 1)) : (loan.totalAmount / loan.totalTenureMonths);
-                const totalCalculated = emi * loan.totalTenureMonths;
+                let emi = 0;
+                let totalCalculated = 0;
+                let isFlexiLoan = false;
+                let interestOnlyEmi = 0;
+
+                if (r > 0) {
+                  if (loan.interestOnlyMonths > 0 && loan.interestOnlyMonths < loan.totalTenureMonths) {
+                    isFlexiLoan = true;
+                    interestOnlyEmi = loan.totalAmount * r;
+                    const remainingN = loan.totalTenureMonths - loan.interestOnlyMonths;
+                    emi = (loan.totalAmount * r * Math.pow(1 + r, remainingN)) / (Math.pow(1 + r, remainingN) - 1);
+                    totalCalculated = (interestOnlyEmi * loan.interestOnlyMonths) + (emi * remainingN);
+                  } else {
+                    emi = (loan.totalAmount * r * Math.pow(1 + r, loan.totalTenureMonths)) / (Math.pow(1 + r, loan.totalTenureMonths) - 1);
+                    totalCalculated = emi * loan.totalTenureMonths;
+                  }
+                } else {
+                  emi = loan.totalAmount / loan.totalTenureMonths;
+                  totalCalculated = loan.totalAmount;
+                }
 
                 return (
                   <div key={loan.id} style={{ padding: '16px', background: 'var(--glass-bg)', borderRadius: '16px', border: '1px solid var(--glass-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
@@ -232,9 +287,25 @@ export default function ClientLoanCategoryDetail({ loans }: { loans: any[] }) {
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Tenure</div>
-                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{loan.totalTenureMonths} Months</div>
+                        <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                          {loan.totalTenureMonths} Months
+                          {isFlexiLoan && <span style={{ fontSize: '0.75rem', color: 'var(--brand)', marginLeft: '4px' }}>({loan.interestOnlyMonths} mo flexi)</span>}
+                        </div>
                       </div>
                     </div>
+
+                    {isFlexiLoan && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
+                        <div>
+                          <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Interest-Only EMI</div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{interestOnlyEmi.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div>
+                          <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Regular EMI</div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{currencySymbol}{emi.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      </div>
+                    )}
 
                     <div style={{ borderTop: '1px dashed var(--glass-border)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Total Payable:</span>

@@ -10,10 +10,11 @@ import {
   updateVariableExpenseEntry, 
   updateLoan, 
   updateCreditCardTransaction,
-  updateRetirementInvestment
+  updateRetirementInvestment,
+  updateInvestment
 } from "@/app/actions";
 
-export type EntityType = "INCOME" | "EXPENSE" | "FIXED_ENTRY" | "VARIABLE_ENTRY" | "LOAN" | "CREDIT_CARD_TX" | "RETIREMENT_INVESTMENT";
+export type EntityType = "INCOME" | "EXPENSE" | "FIXED_ENTRY" | "VARIABLE_ENTRY" | "LOAN" | "CREDIT_CARD_TX" | "RETIREMENT_INVESTMENT" | "INVESTMENT";
 
 interface GlobalEditModalProps {
   entityType: EntityType;
@@ -34,7 +35,11 @@ export default function GlobalEditModal({ entityType, entityData, onClose }: Glo
   const [provider, setProvider] = useState(entityData.provider || "");
   const [interestRate, setInterestRate] = useState(entityData.interestRate || "");
   const [tenure, setTenure] = useState(entityData.tenure || entityData.totalTenureMonths || "");
+  const [interestOnlyMonths, setInterestOnlyMonths] = useState(entityData.interestOnlyMonths || "");
   const [monthlyEmi, setMonthlyEmi] = useState(entityData.monthlyEmi || "");
+
+  // Investment specific states
+  const [type, setType] = useState(entityData.type || "");
 
   // Retirement Investment specific states
   const [paymentTerms, setPaymentTerms] = useState(entityData.paymentTerms || "Monthly");
@@ -52,7 +57,7 @@ export default function GlobalEditModal({ entityType, entityData, onClose }: Glo
       } else if (entityType === "VARIABLE_ENTRY") {
         await updateVariableExpenseEntry(entityData.id, parseFloat(amount));
       } else if (entityType === "LOAN") {
-        await updateLoan(entityData.id, title, provider, parseFloat(amount), parseFloat(interestRate) || 0, date, parseInt(tenure));
+        await updateLoan(entityData.id, title, provider, parseFloat(amount), parseFloat(interestRate) || 0, date, parseInt(tenure), parseInt(interestOnlyMonths) || 0);
       } else if (entityType === "CREDIT_CARD_TX") {
         await updateCreditCardTransaction(entityData.id, title, parseFloat(amount), date, parseFloat(interestRate) || undefined, parseInt(tenure) || undefined, parseFloat(monthlyEmi) || undefined);
       } else if (entityType === "RETIREMENT_INVESTMENT") {
@@ -62,6 +67,13 @@ export default function GlobalEditModal({ entityType, entityData, onClose }: Glo
           startDate: date,
           paymentTerms,
           installmentAmount: parseFloat(amount)
+        });
+      } else if (entityType === "INVESTMENT") {
+        await updateInvestment(entityData.id, {
+          name: title,
+          type,
+          provider,
+          startDate: date,
         });
       }
       onClose();
@@ -92,24 +104,35 @@ export default function GlobalEditModal({ entityType, entityData, onClose }: Glo
             <input type="text" className="form-input" placeholder="Title/Name" value={title} onChange={(e) => setTitle(e.target.value)} required />
           )}
 
-          {(entityType === "LOAN" || entityType === "RETIREMENT_INVESTMENT") && (
+          {(entityType === "LOAN" || entityType === "RETIREMENT_INVESTMENT" || entityType === "INVESTMENT") && (
             <input type="text" className="form-input" placeholder="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} required />
           )}
 
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>{currencySymbol}</span>
-            <input type="number" step="0.01" className="form-input" style={{ paddingLeft: '32px' }} placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-          </div>
+          {(entityType === "RETIREMENT_INVESTMENT" || entityType === "INVESTMENT") && (
+            <input type="text" className="form-input" placeholder="Type (e.g. Mutual Fund, PPF)" value={type} onChange={(e) => setType(e.target.value)} required />
+          )}
 
-          {(entityType === "INCOME" || entityType === "EXPENSE" || entityType === "LOAN" || entityType === "CREDIT_CARD_TX" || entityType === "RETIREMENT_INVESTMENT") && (
+          {entityType !== "INVESTMENT" && (
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>{currencySymbol}</span>
+              <input type="number" step="0.01" className="form-input" style={{ paddingLeft: '32px' }} placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            </div>
+          )}
+
+          {(entityType === "INCOME" || entityType === "EXPENSE" || entityType === "LOAN" || entityType === "CREDIT_CARD_TX" || entityType === "RETIREMENT_INVESTMENT" || entityType === "INVESTMENT") && (
             <input type="date" className="form-input" value={date} onChange={(e) => setDate(e.target.value)} required />
           )}
 
           {(entityType === "LOAN" || isEmiTx) && (
-            <div className="flex gap-2">
-              <input type="number" step="0.01" className="form-input" placeholder="Interest Rate %" value={interestRate} onChange={e => setInterestRate(e.target.value)} />
-              <input type="number" className="form-input" placeholder="Tenure (Months)" value={tenure} onChange={e => setTenure(e.target.value)} required />
-            </div>
+            <>
+              <div className="flex gap-2">
+                <input type="number" step="0.01" className="form-input" placeholder="Interest Rate %" value={interestRate} onChange={e => setInterestRate(e.target.value)} />
+                <input type="number" className="form-input" placeholder="Tenure (Months)" value={tenure} onChange={e => setTenure(e.target.value)} required />
+              </div>
+              {entityType === "LOAN" && (
+                <input type="number" className="form-input" placeholder="Flexi Period (Months)" value={interestOnlyMonths} onChange={e => setInterestOnlyMonths(e.target.value)} />
+              )}
+            </>
           )}
 
           {entityType === "RETIREMENT_INVESTMENT" && (

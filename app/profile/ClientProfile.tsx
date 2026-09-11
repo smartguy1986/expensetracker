@@ -1,114 +1,239 @@
 "use client";
 
 import { useState } from "react";
-import { updateUserProfile } from "@/app/actions";
 import { signOut } from "next-auth/react";
 import { useCurrency } from "@/app/components/CurrencyProvider";
-import { ChevronLeft, FileText, ScrollText, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { 
+  ChevronRight, 
+  User, 
+  Shield, 
+  Coins, 
+  Tags, 
+  CreditCard, 
+  Repeat, 
+  Target, 
+  Palette, 
+  Bell, 
+  Calendar, 
+  DownloadCloud, 
+  UploadCloud, 
+  Cloud, 
+  HelpCircle, 
+  Info,
+  LogOut
+} from "lucide-react";
+import { updateUserProfile } from "@/app/actions";
 
 export default function ClientProfile({ initialProfile }: { initialProfile: any }) {
-  const { setCurrency: updateGlobalCurrency } = useCurrency();
+  const { currencySymbol, setCurrency: updateGlobalCurrency } = useCurrency();
   const [currency, setCurrency] = useState(initialProfile.currency || "USD");
-  const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState("");
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    await updateUserProfile({ themePreference: "dark", accentColor: "#000000", currency });
-    setMessage("Settings saved successfully!");
-    setIsSaving(false);
-    
-    // Apply changes locally immediately
-    updateGlobalCurrency(currency);
-    
-    setTimeout(() => setMessage(""), 3000);
+  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCur = e.target.value;
+    setCurrency(newCur);
+    updateGlobalCurrency(newCur);
+    await updateUserProfile({ themePreference: "dark", accentColor: "#000000", currency: newCur });
   };
 
-  const handleGenerateReport = () => {
-    alert("Report generation started! Your PDF will be ready shortly.");
+  const [username, setUsername] = useState(initialProfile.username || "Arijit");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [avatarImage, setAvatarImage] = useState(initialProfile.image || null);
+  const email = initialProfile.email || "arijit@email.com";
+  const avatarText = username.charAt(0).toUpperCase();
+
+  const handleSaveName = async () => {
+    setIsEditingName(false);
+    await updateUserProfile({ username });
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        setAvatarImage(base64String);
+        await updateUserProfile({ image: base64String });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const ListItem = ({ icon: Icon, label, value, onClick, color = "var(--text-primary)", children }: any) => (
+    <div 
+      onClick={onClick}
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        padding: '16px', 
+        borderBottom: '1px solid var(--glass-border)',
+        cursor: onClick ? 'pointer' : 'default',
+        background: 'var(--bg-color)',
+        color
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Icon size={20} />
+        <span style={{ fontWeight: '500', fontSize: '1.05rem' }}>{label}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+        {value && <span style={{ fontSize: '0.95rem' }}>{value}</span>}
+        {children}
+        {onClick && <ChevronRight size={18} opacity={0.5} />}
+      </div>
+    </div>
+  );
+
+  const GroupHeader = ({ title }: { title: string }) => (
+    <div className="serif" style={{ 
+      padding: '24px 16px 8px 16px', 
+      fontSize: '0.85rem', 
+      fontWeight: '600', 
+      color: 'var(--text-muted)',
+      letterSpacing: '1px',
+      textTransform: 'uppercase'
+    }}>
+      {title}
+    </div>
+  );
 
   return (
-    <div>
-      {/* Settings Header */}
-      <div className="top-bar-centered animate-in" style={{ padding: '24px 24px 16px 24px' }}>
-        <div style={{ width: '40px' }}></div>
-        <div className="page-title">User Profile</div>
-        <div style={{ width: '40px', textAlign: 'right', cursor: 'pointer', opacity: 0.8, color: 'var(--text-primary)' }}>
-          <SettingsIcon size={24} />
+    <div style={{ paddingBottom: '120px', background: 'transparent' }}>
+      
+      {/* Top Bar */}
+      <div style={{ padding: '24px 24px 0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ width: '60px' }}></div>
+        <div className="page-title" style={{ fontSize: '1.2rem' }}></div>
+        <div style={{ width: '60px', textAlign: 'right' }}>
+          <button 
+            onClick={() => {
+              if (isEditingName) handleSaveName();
+              else setIsEditingName(true);
+            }} 
+            style={{ background: 'transparent', border: 'none', color: 'var(--brand, #8b5cf6)', fontWeight: '600', fontSize: '1rem', cursor: 'pointer' }}
+          >
+            {isEditingName ? 'Done' : 'Edit'}
+          </button>
         </div>
       </div>
 
-      <div className="overlap-container animate-in delay-1" style={{ padding: '0 24px', paddingBottom: '40px' }}>
-        
-        {message && (
-          <div style={{ backgroundColor: 'var(--accent-color)', color: '#000', padding: '12px 20px', borderRadius: '16px', marginBottom: '16px', textAlign: 'center', fontWeight: '600' }}>
-            {message}
+      {/* Profile Header */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        padding: '16px 24px 24px',
+      }}>
+        <div style={{ position: 'relative', marginBottom: '16px' }}>
+          <label style={{ cursor: 'pointer' }}>
+            <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+            {avatarImage ? (
+              <div style={{
+                width: '80px', 
+                height: '80px', 
+                borderRadius: '50%', 
+                backgroundImage: `url(${avatarImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }} />
+            ) : (
+              <div style={{ 
+                width: '80px', 
+                height: '80px', 
+                borderRadius: '50%', 
+                background: 'var(--brand, #8b5cf6)', 
+                color: 'white',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}>
+                {avatarText}
+              </div>
+            )}
+            <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'var(--brand, #8b5cf6)', borderRadius: '50%', padding: '4px', border: '2px solid white' }}>
+              <User size={12} color="white" />
+            </div>
+          </label>
+        </div>
+        {isEditingName ? (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)}
+              className="form-input"
+              style={{ margin: 0, textAlign: 'center', fontSize: '1.2rem', padding: '4px 8px' }}
+              autoFocus
+            />
+          </div>
+        ) : (
+          <div className="page-title" style={{ fontSize: '1.8rem', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+            {username}
           </div>
         )}
+        <p style={{ color: 'var(--text-muted)', margin: '0 0 20px 0', fontSize: '0.9rem' }}>
+          {email}
+        </p>
+      </div>
 
-        {/* Preferences Card */}
-        <div className="card">
-          <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Preferences</h2>
-          <form onSubmit={handleSave}>
-            
-            <div className="form-group mb-4">
-              <label className="form-label">Currency</label>
-              <select className="form-input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="INR">INR (₹)</option>
-                <option value="JPY">JPY (¥)</option>
-              </select>
-            </div>
+      <div style={{ padding: '0 16px' }}>
+        <div style={{ background: 'var(--glass-bg)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+          
+          <GroupHeader title="Finance" />
+          <ListItem icon={Coins} label="Currency">
+            <select 
+              value={currency} 
+              onChange={handleCurrencyChange} 
+              style={{ 
+                border: 'none', 
+                background: 'transparent', 
+                color: 'var(--text-muted)', 
+                fontSize: '0.95rem',
+                textAlign: 'right',
+                outline: 'none',
+                WebkitAppearance: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="JPY">JPY (¥)</option>
+            </select>
+            <ChevronRight size={18} opacity={0.5} />
+          </ListItem>
 
-            <button type="submit" className="btn" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Preferences"}
+          <div style={{ padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            {initialProfile?.lastLoginAt && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Last login: {new Date(initialProfile.lastLoginAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+              </div>
+            )}
+            <button 
+              onClick={() => signOut({ callbackUrl: '/' })} 
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                color: 'var(--danger)', 
+                fontSize: '1.1rem', 
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <LogOut size={20} /> Sign Out
             </button>
-          </form>
-        </div>
+          </div>
 
-        {/* Actions Card */}
-        <div className="card animate-in delay-2">
-          <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Data & Reports</h2>
-          
-          <button onClick={handleGenerateReport} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
-            <div className="flex align-center">
-              <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}><FileText size={20} /></div>
-              <div>
-                <div className="font-semibold" style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>Generate Report</div>
-                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Download your financial summary as PDF</div>
-              </div>
-            </div>
-          </button>
         </div>
-
-        {/* Account Card */}
-        <div className="card animate-in delay-3">
-          <h2 className="serif" style={{ fontSize: '1.4rem', marginBottom: '20px' }}>Account</h2>
-          
-          <button onClick={() => alert("Terms & Conditions will open here.")} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '12px' }}>
-            <div className="flex align-center">
-              <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--text-primary)' }}><ScrollText size={20} /></div>
-              <div>
-                <div className="font-semibold" style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>Terms & Conditions</div>
-              </div>
-            </div>
-          </button>
-          
-          <button onClick={() => signOut({ callbackUrl: '/' })} className="tx-item" style={{ border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: '0' }}>
-            <div className="flex align-center">
-              <div className="tx-icon" style={{ backgroundColor: 'transparent', color: 'var(--danger)', borderColor: 'var(--danger)' }}><LogOut size={20} /></div>
-              <div>
-                <div className="font-semibold" style={{ fontSize: '1.05rem', color: 'var(--danger)' }}>Logout</div>
-                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Sign out of your account securely</div>
-              </div>
-            </div>
-          </button>
-        </div>
-
       </div>
     </div>
   );

@@ -84,13 +84,26 @@ export async function getExpenses() {
   });
 }
 
-export async function addExpense(data: { title: string; categoryId: string; monthlyCost: number }) {
+export async function addExpense(data: { title: string; categoryId?: string; monthlyCost: number; categoryName?: string; subCategory?: string }) {
   const userId = await getUserId();
+  
+  let catId = data.categoryId;
+  if (!catId) {
+    const varCat = await prisma.category.findUnique({ where: { name: 'Variable' } });
+    if (varCat) catId = varCat.id;
+    else {
+      const first = await prisma.category.findFirst();
+      catId = first?.id || "";
+    }
+  }
+
   await prisma.expense.create({
     data: {
       userId,
       title: data.title,
-      categoryId: data.categoryId,
+      categoryId: catId,
+      categoryName: data.categoryName,
+      subCategory: data.subCategory,
       monthlyCost: data.monthlyCost,
     },
   });
@@ -98,13 +111,15 @@ export async function addExpense(data: { title: string; categoryId: string; mont
   revalidatePath("/");
 }
 
-export async function updateExpense(id: string, data: { title: string; categoryId: string; monthlyCost: number }) {
+export async function updateExpense(id: string, data: { title: string; categoryId: string; monthlyCost: number; categoryName?: string; subCategory?: string }) {
   const userId = await getUserId();
   await prisma.expense.update({
     where: { id, userId },
     data: {
       title: data.title,
       categoryId: data.categoryId,
+      categoryName: data.categoryName,
+      subCategory: data.subCategory,
       monthlyCost: data.monthlyCost,
     },
   });
@@ -129,12 +144,13 @@ export async function getIncomes() {
   });
 }
 
-export async function addIncome(data: { title: string; amount: number }) {
+export async function addIncome(data: { title: string; amount: number; categoryName?: string }) {
   const userId = await getUserId();
   await prisma.income.create({
     data: {
       userId,
       title: data.title,
+      categoryName: data.categoryName,
       amount: data.amount,
     },
   });
@@ -142,12 +158,13 @@ export async function addIncome(data: { title: string; amount: number }) {
   revalidatePath("/statistics");
 }
 
-export async function updateIncome(id: string, data: { title: string; amount: number }) {
+export async function updateIncome(id: string, data: { title: string; amount: number; categoryName?: string }) {
   const userId = await getUserId();
   await prisma.income.update({
     where: { id, userId },
     data: {
       title: data.title,
+      categoryName: data.categoryName,
       amount: data.amount,
     },
   });
@@ -160,6 +177,21 @@ export async function deleteIncome(id: string) {
   await prisma.income.delete({ where: { id, userId } });
   revalidatePath("/");
   revalidatePath("/statistics");
+}
+
+export async function getRecentTransactions() {
+  const userId = await getUserId();
+  const [expenses, incomes] = await Promise.all([
+    prisma.expense.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 5 }),
+    prisma.income.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 5 })
+  ]);
+  
+  const recent = [
+    ...expenses.map(e => ({ id: `exp-${e.id}`, title: e.title, amount: -e.monthlyCost, date: e.createdAt, type: 'expense', category: e.categoryName || 'Other' })),
+    ...incomes.map(i => ({ id: `inc-${i.id}`, title: i.title, amount: i.amount, date: i.createdAt, type: 'income', category: i.categoryName || 'Other' }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+  
+  return recent;
 }
 
 // --- Fixed Expenses ---
@@ -224,21 +256,26 @@ export async function deleteFixedExpenseEntry(id: string) {
 
 export async function getUserProfile() {
   const userId = await getUserId();
-  return await prisma.user.findUnique({
+  return prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, image: true, themePreference: true, accentColor: true, currency: true },
+    select: { id: true, username: true, image: true, themePreference: true, accentColor: true, currency: true, lastLoginAt: true },
   });
 }
 
-export async function updateUserProfile(data: { themePreference: string; accentColor: string; currency: string }) {
+export async function updateUserProfile(data: { themePreference?: string; accentColor?: string; currency?: string; username?: string; image?: string }) {
   const userId = await getUserId();
+  
+  // Build update object based on provided fields
+  const updateData: any = {};
+  if (data.themePreference) updateData.themePreference = data.themePreference;
+  if (data.accentColor) updateData.accentColor = data.accentColor;
+  if (data.currency) updateData.currency = data.currency;
+  if (data.username) updateData.username = data.username;
+  if (data.image) updateData.image = data.image;
+
   await prisma.user.update({
     where: { id: userId },
-    data: {
-      themePreference: data.themePreference,
-      accentColor: data.accentColor,
-      currency: data.currency,
-    },
+    data: updateData,
   });
   revalidatePath("/");
 }
@@ -368,7 +405,8 @@ export async function addLoan(
   totalAmount: number, 
   interestRate: number, 
   startDate: string, 
-  totalTenureMonths: number
+  totalTenureMonths: number,
+  interestOnlyMonths: number = 0
 ) {
   const userId = await getUserId();
   const loan = await prisma.loan.create({
@@ -379,7 +417,8 @@ export async function addLoan(
       totalAmount,
       interestRate,
       startDate: new Date(startDate),
-      totalTenureMonths
+      totalTenureMonths,
+      interestOnlyMonths
     }
   });
   revalidatePath('/dashboard');
@@ -546,7 +585,8 @@ export async function updateLoan(
   totalAmount: number, 
   interestRate: number, 
   startDate: string, 
-  totalTenureMonths: number
+  totalTenureMonths: number,
+  interestOnlyMonths: number = 0
 ) {
   const userId = await getUserId();
   await prisma.loan.update({
@@ -557,7 +597,8 @@ export async function updateLoan(
       totalAmount,
       interestRate,
       startDate: new Date(startDate),
-      totalTenureMonths
+      totalTenureMonths,
+      interestOnlyMonths
     }
   });
   revalidatePath('/dashboard');
@@ -667,5 +708,95 @@ export async function updateRetirementWithdrawn(id: string, totalWithdrawn: numb
   revalidatePath('/dashboard');
   revalidatePath('/categories');
   revalidatePath('/statistics');
+  revalidatePath('/statistics');
   return updated;
+}
+
+// --- Investments (Portfolios) ---
+
+export async function getInvestments() {
+  const userId = await getUserId();
+  return await prisma.investment.findMany({
+    where: { userId },
+    include: { transactions: { orderBy: { date: 'desc' } } },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function addInvestment(data: {
+  name: string;
+  type: string;
+  provider: string;
+  startDate: string;
+  currentValue: number;
+}) {
+  const userId = await getUserId();
+  const inv = await prisma.investment.create({
+    data: {
+      userId,
+      name: data.name,
+      type: data.type,
+      provider: data.provider,
+      startDate: new Date(data.startDate),
+      currentValue: data.currentValue
+    }
+  });
+  revalidatePath('/dashboard');
+  revalidatePath('/categories');
+  return inv;
+}
+
+export async function updateInvestment(id: string, data: {
+  name?: string;
+  type?: string;
+  provider?: string;
+  startDate?: string;
+  currentValue?: number;
+}) {
+  const userId = await getUserId();
+  const updateData: any = { ...data };
+  if (data.startDate) updateData.startDate = new Date(data.startDate);
+
+  const updated = await prisma.investment.update({
+    where: { id, userId },
+    data: updateData
+  });
+  revalidatePath('/dashboard');
+  revalidatePath('/categories');
+  return updated;
+}
+
+export async function deleteInvestment(id: string) {
+  const userId = await getUserId();
+  await prisma.investment.delete({
+    where: { id, userId }
+  });
+  revalidatePath('/dashboard');
+  revalidatePath('/categories');
+  return true;
+}
+
+export async function addInvestmentTransaction(investmentId: string, type: "DEPOSIT" | "WITHDRAWAL", amount: number, date: string) {
+  await getUserId(); // ensure auth
+  const tx = await prisma.investmentTransaction.create({
+    data: {
+      investmentId,
+      type,
+      amount,
+      date: new Date(date)
+    }
+  });
+  revalidatePath('/dashboard');
+  revalidatePath('/categories');
+  return tx;
+}
+
+export async function deleteInvestmentTransaction(id: string) {
+  await getUserId();
+  await prisma.investmentTransaction.delete({
+    where: { id }
+  });
+  revalidatePath('/dashboard');
+  revalidatePath('/categories');
+  return true;
 }

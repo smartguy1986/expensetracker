@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 import { getUserProfile } from "@/app/actions";
 import { CurrencyProvider } from "@/app/components/CurrencyProvider";
 import { Home, Wallet, Plus, BarChart2, Settings } from "lucide-react";
+import GlobalAddModal from "@/app/components/GlobalAddModal";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     getUserProfile()
@@ -46,9 +48,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {navItems.map((item, index) => {
             if (item.isFab) {
               return (
-                <Link key={index} href={item.path} className="nav-fab animate-in">
+                <button 
+                  key={index} 
+                  onClick={() => setShowAddModal(true)} 
+                  className="nav-fab animate-in"
+                  style={{ border: 'none', cursor: 'pointer' }}
+                >
                   {item.icon}
-                </Link>
+                </button>
               );
             }
             
@@ -65,6 +72,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           })}
         </nav>
       </div>
+
+      {showAddModal && <GlobalAddModal onClose={() => setShowAddModal(false)} />}
     </CurrencyProvider>
   );
 }

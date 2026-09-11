@@ -118,8 +118,8 @@ export default async function Dashboard() {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: '300', color: 'var(--text-muted)' }}>Hello,</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+            <div className="page-title" style={{ fontSize: '1.8rem', color: 'var(--text-muted)' }}>Hello,</div>
+            <div className="page-title" style={{ fontSize: '1.8rem', color: 'var(--text-primary)' }}>
               {profile?.username ? profile.username.split(' ')[0] : 'User'}
             </div>
           </div>
